@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Eye, EyeOff, Github, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Github, ArrowRight, Sparkles} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useMotionTemplate, useMotionValue, useSpring } from "framer-motion";
@@ -16,10 +16,10 @@ const GoogleIcon = () => (
 
 /* ---------------- UTILITY COMPONENTS ---------------- */
 // A subtle noise overlay for that "film grain" texture seen on premium sites
-const NoiseOverlay = () => (
-  <div className="absolute inset-0 w-full h-full pointer-events-none z-50 opacity-[0.03]"
-    style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
-);
+// const NoiseOverlay = () => (
+//   <div className="absolute inset-0 w-full h-full pointer-events-none z-50 opacity-[0.03]"
+//     style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
+// );
 
 export default function Login() {
   const { login } = useAuth();

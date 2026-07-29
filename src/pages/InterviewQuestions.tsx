@@ -143,7 +143,7 @@ export default function InterviewQuestions() {
     }
   }
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x < -100) {
       setOpen(false);
     }
