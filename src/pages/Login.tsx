@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Eye, EyeOff, Lock, Github } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Eye, EyeOff, Github, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence, useMotionTemplate, useMotionValue, useSpring } from "framer-motion";
 
 /* ---------------- ICONS ---------------- */
 const GoogleIcon = () => (
@@ -14,6 +14,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
+/* ---------------- UTILITY COMPONENTS ---------------- */
+// A subtle noise overlay for that "film grain" texture seen on premium sites
+const NoiseOverlay = () => (
+  <div className="absolute inset-0 w-full h-full pointer-events-none z-50 opacity-[0.03]"
+    style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
+);
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,34 +30,45 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  // State to trigger the split screen
-  const [isExpanded, setIsExpanded] = useState(false);
-  // State to trigger the form appearance
-  const [showForm, setShowForm] = useState(false);
+  const [introFinished, setIntroFinished] = useState(false);
 
+  // Reference for the video element
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  /* --- MOUSE SPOTLIGHT LOGIC --- */
+  // We use spring physics for the mouse movement to give it a "lag" feel like high-end websites
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Smooth out the mouse movement
+  const smoothX = useSpring(mouseX, { stiffness: 150, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 150, damping: 20 });
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
+  // Effect to handle Intro and forceful Video Play
   useEffect(() => {
-    // 1. Initial Phase: Text slowly fades in (Wait 3.5s)
-    // We increased this from 2000 to 3500 to allow the 3s fade-in to complete comfortably
-    const splitTimer = setTimeout(() => {
-      setIsExpanded(true);
-    }, 3500);
+    // 1. Trigger the panel split animation
+    const timer = setTimeout(() => setIntroFinished(true), 2500); // Increased slightly for dramatic effect
 
-    // 2. Form Phase: Form starts appearing after the split animation stabilizes (Wait 4.8s)
-    const formTimer = setTimeout(() => {
-      setShowForm(true);
-    }, 4800);
+    // 2. Force video play
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 0.85; // Slow down slightly for a more cinematic feel
+      videoRef.current.play().catch(e => console.error("Auto-play failed:", e));
+    }
 
-    return () => {
-      clearTimeout(splitTimer);
-      clearTimeout(formTimer);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
+    await new Promise(r => setTimeout(r, 1500));
 
     try {
       const res = await fetch("http://127.0.0.1:8000/auth/login", {
@@ -58,10 +76,8 @@ export default function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Login failed");
-
       login(data.access_token);
       navigate("/dashboard");
     } catch (err: any) {
@@ -71,149 +87,250 @@ export default function Login() {
     }
   }
 
+  const leftPanelContentVariants = {
+    centered: { x: 0, scale: 1, opacity: 1 },
+    split: {
+      x: "-25vw",
+      scale: 0.95, // Slight shrink for depth
+      opacity: 0.8,
+      transition: { type: "spring" as const, stiffness: 30, damping: 15, mass: 1 }
+    }
+  };
+
+  const rightPanelVariants = {
+    closed: { x: "100%" },
+    open: {
+      x: "0%",
+      transition: { type: "spring" as const, stiffness: 35, damping: 15, mass: 1 }
+    }
+  };
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-white">
-      
-      {/* ---------------- LEFT PANEL (ANIMATED WIDTH) ---------------- */}
-      <motion.div
-        initial={{ width: "100%" }} 
-        animate={{ width: isExpanded ? "50%" : "100%" }}
-        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }} 
-        className="relative flex flex-col justify-center items-center bg-gradient-to-br from-[#7A4076] via-[#923C6D] to-[#AD3155] z-20 shadow-[4px_0_24px_rgba(0,0,0,0.1)]"
-      >
-        <div className="absolute inset-0 bg-black/5 pointer-events-none" />
-        
-        <div className="relative z-10 text-center px-12 max-w-lg min-w-[300px]">
-          {/* UPDATED ANIMATION:
-              duration: 3.0 (Very slow, cinematic fade in)
-          */}
-          <motion.h1 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 3.0, ease: "easeOut" }} 
-            className="text-5xl font-bold text-white mb-6 whitespace-nowrap"
-          >
-            Welcome to HireMind
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 3.0, delay: 0.5, ease: "easeOut" }}
-            className="text-lg text-white/90 leading-relaxed"
-          >
-            Sign in to continue to your account.
-          </motion.p>
+    <div className="relative flex h-screen w-full overflow-hidden bg-black text-white font-['Outfit'] selection:bg-violet-500/30">
+
+      {/* ---------------- LEFT PANEL CONTENT ---------------- */}
+      <div className="fixed inset-0 z-0 flex items-center justify-center cursor-default bg-black">
+
+       {/* VIDEO BACKGROUND - HIGH CLARITY VERSION */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-black">
+             <video
+                ref={videoRef}
+                src="public\bg.mp4" 
+                autoPlay
+                muted
+                loop
+                playsInline
+                // FIX 1: Removed 'opacity-80'. 
+                // FIX 2: Added 'contrast-125' and 'brightness-110' to artificially sharpen the look.
+                className="w-full h-full object-cover opacity-100 contrast-125 brightness-110 saturate-125" 
+                style={{ pointerEvents: 'none' }}
+            />
+            
+             {/* FIX 3: Simplified Gradient. Only darkens the very bottom/top for text readability, keeping the center crisp. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40"></div>
+            
+            {/* FIX 4: Removed the <NoiseOverlay /> component completely */}
         </div>
-      </motion.div>
 
-      {/* ---------------- RIGHT PANEL (ANIMATED WIDTH) ---------------- */}
+        <motion.div
+          initial="centered"
+          animate={introFinished ? "split" : "centered"}
+          variants={leftPanelContentVariants}
+          className="relative z-10 text-center px-12 max-w-2xl min-w-[350px] will-change-transform flex flex-col items-center"
+        >
+          {/* Logo / Icon Container */}
+          <motion.div
+            initial={{ opacity: 0, y: 30, rotate: -10 }}
+            animate={{ opacity: 1, y: 0, rotate: 0 }}
+            transition={{ duration: 1.2, type: "spring" }}
+            className="mb-8 relative"
+          >
+            <div className="absolute inset-0 bg-violet-500 blur-2xl opacity-20 animate-pulse"></div>
+            <div className="relative p-4 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(124,58,237,0.5)]">
+              <Sparkles className="w-10 h-10 text-violet-300" strokeWidth={1.5} />
+            </div>
+          </motion.div>
+
+          {/* Main Title */}
+          <motion.h1
+            initial={{ opacity: 0, letterSpacing: "-0.05em" }}
+            animate={{ opacity: 1, letterSpacing: "-0.02em" }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-7xl md:text-8xl font-bold tracking-tighter text-white mb-6 drop-shadow-2xl"
+          >
+            HireMind
+          </motion.h1>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.5, delay: 0.8 }}
+            className="text-2xl text-zinc-400 font-light leading-relaxed max-w-lg mx-auto"
+          >
+            The future of interview preparation. <br />
+            <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent font-medium">Powered by Gemini AI.</span>
+          </motion.p>
+        </motion.div>
+      </div>
+
+
+      {/* ---------------- RIGHT PANEL SLIDER ---------------- */}
       <motion.div
-        initial={{ width: "0%" }}
-        animate={{ width: isExpanded ? "50%" : "0%" }}
-        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-        className="relative bg-white flex flex-col justify-center items-center overflow-hidden"
+        initial="closed"
+        animate={introFinished ? "open" : "closed"}
+        variants={rightPanelVariants}
+        onMouseMove={handleMouseMove}
+        // FIX: Changed w-[100vw] md:w-[50vw] to just w-[50vw] to ensure split is always visible
+        className="fixed top-0 right-0 h-full w-[50vw] bg-zinc-950/80 backdrop-blur-3xl border-l border-white/10 z-20 flex flex-col justify-center items-center will-change-transform shadow-2xl"
       >
-        <div className="w-full max-w-md px-8 min-w-[320px]">
-          
-          {showForm && (
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0, y: 30 },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  transition: {
-                    duration: 1.0, 
-                    staggerChildren: 0.15
+        {/* --- DYNAMIC BACKGROUND GLOW --- */}
+        <motion.div
+          className="pointer-events-none absolute -inset-px opacity-0 transition duration-500 group-hover:opacity-100"
+          style={{
+            background: useMotionTemplate`
+              radial-gradient(
+                800px circle at ${smoothX}px ${smoothY}px,
+                rgba(124, 58, 237, 0.08),
+                transparent 80%
+              )
+            `,
+          }}
+        />
+
+        {/* Decorative Grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+
+        <div className="w-full max-w-[420px] px-8 relative z-10">
+          <AnimatePresence>
+            {introFinished && (
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.08, delayChildren: 0.3 }
                   }
-                }
-              }}
-              className="space-y-8"
-            >
-              
-              {/* Header */}
-              <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="text-center">
-                <div className="inline-flex w-12 h-12 bg-pink-600 rounded-lg mb-4 items-center justify-center shadow-lg shadow-pink-600/30">
-                  <Lock className="text-white w-6 h-6" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
-                <p className="text-gray-500 text-sm mt-2">Enter your credentials to continue</p>
-              </motion.div>
+                }}
+                className="space-y-8"
+              >
+                {/* Header */}
+                <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="text-left space-y-2">
+                  <h2 className="text-4xl font-semibold tracking-tighter text-white">Welcome back</h2>
+                  <p className="text-zinc-500 text-base">Enter your credentials to access your workspace.</p>
+                </motion.div>
 
-              {/* Social Buttons */}
-              <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="space-y-3">
-                <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
-                  <GoogleIcon /> Continue with Google
-                </button>
-                <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
-                  <Github className="w-5 h-5" /> Continue with GitHub
-                </button>
-              </motion.div>
+                <motion.form variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} onSubmit={handleSubmit} className="space-y-6">
 
-              {/* Divider */}
-              <motion.div variants={{ hidden: { opacity: 0, scaleX: 0 }, visible: { opacity: 1, scaleX: 1 } }} className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-                </div>
-              </motion.div>
-
-              {/* Form */}
-              <motion.form variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-1">
-                   <label className="text-sm font-medium text-gray-700">Password</label>
-                   <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 pr-10 focus:ring-2 focus:ring-pink-500 outline-none transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
+                  {/* EMAIL INPUT */}
+                  <div className="space-y-2 group">
+                    <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold group-focus-within:text-violet-400 transition-colors ml-1">Email</label>
+                    <div className="relative transition-all duration-300 group-focus-within:shadow-[0_0_30px_-10px_rgba(124,58,237,0.3)] rounded-xl">
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@company.com"
+                        className="peer w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-zinc-700 outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all duration-300"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded text-center">{error}</p>}
+                  {/* PASSWORD INPUT */}
+                  <div className="space-y-2 group">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold group-focus-within:text-violet-400 transition-colors">Password</label>
+                      <a href="#" className="text-xs text-zinc-500 hover:text-white transition-colors">Forgot password?</a>
+                    </div>
+                    <div className="relative transition-all duration-300 group-focus-within:shadow-[0_0_30px_-10px_rgba(124,58,237,0.3)] rounded-xl">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="peer w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-4 pr-12 text-white placeholder-zinc-700 outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 transition-all duration-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-white transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
 
-                <button
-                  disabled={loading}
-                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-                >
-                  {loading ? "Signing in..." : "Sign In"}
-                </button>
-              </motion.form>
+                  {/* ERROR MESSAGE */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, height: "auto", scale: 1 }}
+                      className="flex items-center gap-2 text-red-400 text-sm bg-red-950/30 border border-red-500/20 p-3 rounded-lg"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      {error}
+                    </motion.div>
+                  )}
 
-              <motion.p variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }} className="text-center text-sm text-gray-600">
-                Don’t have an account?{" "}
-                <Link to="/signup" className="text-pink-600 font-medium hover:text-pink-700">Sign up</Link>
-              </motion.p>
-              
-            </motion.div>
-          )}
+                  {/* SUBMIT BUTTON */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={loading}
+                    className="relative w-full py-4 rounded-xl bg-white text-black font-semibold text-lg hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 overflow-hidden shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
+                  >
+                    {/* Button Shine Effect */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-20" />
+
+                    <span className="relative z-10 flex items-center gap-2">
+                      {loading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-zinc-300 border-t-zinc-800 rounded-full animate-spin" />
+                          <span>Signing in...</span>
+                        </>
+                      ) : (
+                        <>
+                          Sign In <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+                        </>
+                      )}
+                    </span>
+                  </motion.button>
+                </motion.form>
+
+                {/* DIVIDER */}
+                <motion.div variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }} className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-zinc-800"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase tracking-widest">
+                    <span className="bg-[#09090b] px-3 text-zinc-500">Or continue with</span>
+                  </div>
+                </motion.div>
+
+                {/* SOCIAL BUTTONS */}
+                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="grid grid-cols-2 gap-4">
+                  <button className="flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl py-3.5 transition-all group">
+                    <GoogleIcon />
+                    <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">Google</span>
+                  </button>
+                  <button className="flex items-center justify-center gap-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-xl py-3.5 transition-all group">
+                    <Github className="w-5 h-5 text-white" />
+                    <span className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">GitHub</span>
+                  </button>
+                </motion.div>
+
+                {/* SIGN UP LINK */}
+                <motion.p variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }} className="text-center text-sm text-zinc-500">
+                  Don’t have an account?{" "}
+                  <Link to="/signup" className="text-white hover:text-violet-400 font-medium underline underline-offset-4 decoration-zinc-700 hover:decoration-violet-400 transition-all">Sign up for free</Link>
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </div>

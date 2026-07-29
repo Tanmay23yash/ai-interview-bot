@@ -17,11 +17,12 @@ class User(Base):
 class Resume(Base):
     __tablename__ = "resumes"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     extracted_text = Column(Text, nullable=False)
     questions = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     user = relationship("User", back_populates="resumes")
+
