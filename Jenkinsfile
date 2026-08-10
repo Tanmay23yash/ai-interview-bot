@@ -25,7 +25,7 @@ pipeline{
         stage('Install backend dependencies'){
             steps{
                 dir('backend'){
-                    bat 'python -m install -r requirements.txt'
+                    bat 'python -m pip install -r requirements.txt'
                 }
             }
         }
