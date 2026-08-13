@@ -27,6 +27,14 @@ pipeline{
                 bat 'npm test'
             }
         }
+
+        stage('SonarQube Analysis'){
+            steps {
+                withSonarQubeEnv('SonarQube'){
+                    bat 'sonar-scanner'
+                }
+            }
+        }
         
         stage('Install backend dependencies'){
             steps{
