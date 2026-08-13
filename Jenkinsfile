@@ -22,6 +22,12 @@ pipeline{
                 bat 'npm run build'
             }
         }
+        stage('Run frontend Tests'){
+            steps{
+                bat 'npm test'
+            }
+        }
+        
         stage('Install backend dependencies'){
             steps{
                 dir('backend'){
