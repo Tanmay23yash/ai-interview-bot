@@ -45,7 +45,7 @@ pipeline {
             )
         ]) {
             dir('backend') {
-                bat 'set PYTHONPATH=%CD% && pytest'
+                bat 'pytest'
             }
         }
     }

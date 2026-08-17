@@ -1,9 +1,14 @@
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
 from main import app
 
 
 client = TestClient(app)
+
+TEST_EMAIL = f"testuser_{uuid4().hex}@example.com"
+TEST_PASSWORD = "TestPassword123"
 
 
 def test_root():
@@ -19,8 +24,8 @@ def test_register_user():
     response = client.post(
         "/auth/register",
         json={
-            "email": "testuser@example.com",
-            "password": "TestPassword123"
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         }
     )
 
@@ -34,8 +39,8 @@ def test_duplicate_registration():
     response = client.post(
         "/auth/register",
         json={
-            "email": "testuser@example.com",
-            "password": "TestPassword123"
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         }
     )
 
@@ -47,8 +52,8 @@ def test_login():
     response = client.post(
         "/auth/login",
         json={
-            "email": "testuser@example.com",
-            "password": "TestPassword123"
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         }
     )
 
@@ -64,7 +69,7 @@ def test_invalid_login():
     response = client.post(
         "/auth/login",
         json={
-            "email": "testuser@example.com",
+            "email": TEST_EMAIL,
             "password": "WrongPassword"
         }
     )
