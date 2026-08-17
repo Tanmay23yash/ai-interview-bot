@@ -36,7 +36,7 @@ pipeline {
             }
         }
 
-       stage('Run Backend Tests') {
+      stage('Run Backend Tests') {
     steps {
         withCredentials([
             string(
@@ -45,7 +45,7 @@ pipeline {
             )
         ]) {
             dir('backend') {
-                bat 'pytest'
+                bat 'set PYTHONPATH=%CD% && pytest'
             }
         }
     }
