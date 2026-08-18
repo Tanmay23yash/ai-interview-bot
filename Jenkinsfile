@@ -62,6 +62,16 @@ pipeline {
                 }
             }
         }
+    stage('Deploy Frontend') {
+    steps {
+        bat 'deploy.bat'
+    }
+}
+    
+    
+    
+    
+    
     }
 
     post {
@@ -71,7 +81,7 @@ pipeline {
 
         success {
             echo 'Build completed successfully'
-        }
+        } 
 
         failure {
             echo 'Build failed. Check console for info'
