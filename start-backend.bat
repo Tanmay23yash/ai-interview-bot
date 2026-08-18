@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 echo Starting AI Interview Bot Backend...
 
@@ -9,13 +10,40 @@ if not exist "main.py" (
     exit /b 1
 )
 
+echo Checking port 8000...
+
+powershell -NoProfile -Command ^
+    "$p = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue; if ($p) { Stop-Process -Id $p.OwningProcess -Force }"
+
+if exist "venv\Scripts\python.exe" (
+    echo Using backend virtual environment...
+    set "PYTHON=venv\Scripts\python.exe"
+) else (
+    echo Using system/Jenkins Python...
+    set "PYTHON=python"
+)
+
 echo Starting FastAPI server on port 8000...
 
-start "AI Interview Bot Backend" /B cmd /c "venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000"
+powershell -NoProfile -Command ^
+    "$p = Start-Process -FilePath '%PYTHON%' -ArgumentList '-m','uvicorn','main:app','--host','0.0.0.0','--port','8000' -WorkingDirectory '%CD%' -RedirectStandardOutput 'backend.log' -RedirectStandardError 'backend-error.log' -PassThru; Write-Host ('Backend PID: ' + $p.Id)"
 
 timeout /t 5 /nobreak >nul
 
-echo Backend deployment completed.
+echo Checking backend health...
+
+curl -f http://localhost:8000/
+
+if errorlevel 1 (
+    echo ERROR: Backend failed to start.
+    echo.
+    echo ===== Backend Error Log =====
+    if exist backend-error.log type backend-error.log
+    exit /b 1
+)
+
+echo.
+echo Backend deployment completed successfully.
 echo API available at http://localhost:8000
 
 exit /b 0
