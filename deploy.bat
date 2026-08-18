@@ -16,7 +16,7 @@ powershell -NoProfile -Command ^
 echo Starting production server on port 3000...
 
 powershell -NoProfile -Command ^
-    "$p = Start-Process -FilePath 'npx.cmd' -ArgumentList 'serve','-s','dist','-l','3000' -WorkingDirectory '%CD%' -RedirectStandardOutput 'frontend.log' -RedirectStandardError 'frontend-error.log' -PassThru; Write-Host ('Frontend PID: ' + $p.Id)"
+    "$node = (Get-Command node.exe).Source; $serve = Join-Path '%CD%' 'node_modules\serve\build\main.js'; $p = Start-Process -FilePath $node -ArgumentList $serve,'-s','dist','-l','3000' -WorkingDirectory '%CD%' -RedirectStandardOutput 'frontend.log' -RedirectStandardError 'frontend-error.log' -PassThru; Write-Host ('Frontend PID: ' + $p.Id)"
 
 timeout /t 5 /nobreak >nul
 
