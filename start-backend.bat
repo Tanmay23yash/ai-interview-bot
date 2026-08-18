@@ -25,8 +25,7 @@ if exist "venv\Scripts\python.exe" (
 
 echo Starting FastAPI server on port 8000...
 
-powershell -NoProfile -Command ^
-    "$p = Start-Process -FilePath '%PYTHON%' -ArgumentList '-m','uvicorn','main:app','--host','0.0.0.0','--port','8000' -WorkingDirectory '%CD%' -RedirectStandardOutput 'backend.log' -RedirectStandardError 'backend-error.log' -PassThru; Write-Host ('Backend PID: ' + $p.Id)"
+start "" /b "%PYTHON%" -m uvicorn main:app --host 0.0.0.0 --port 8000 <nul >backend.log 2>&1
 
 timeout /t 5 /nobreak >nul
 
@@ -38,7 +37,7 @@ if errorlevel 1 (
     echo ERROR: Backend failed to start.
     echo.
     echo ===== Backend Error Log =====
-    if exist backend-error.log type backend-error.log
+    if exist backend.log type backend.log
     exit /b 1
 )
 

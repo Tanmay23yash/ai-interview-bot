@@ -15,8 +15,7 @@ powershell -NoProfile -Command ^
 
 echo Starting production server on port 3000...
 
-powershell -NoProfile -Command ^
-    "$node = (Get-Command node.exe).Source; $serve = Join-Path '%CD%' 'node_modules\serve\build\main.js'; $p = Start-Process -FilePath $node -ArgumentList $serve,'-s','dist','-l','3000' -WorkingDirectory '%CD%' -RedirectStandardOutput 'frontend.log' -RedirectStandardError 'frontend-error.log' -PassThru; Write-Host ('Frontend PID: ' + $p.Id)"
+start "" /b node node_modules\serve\build\main.js -s dist -l 3000 <nul >frontend.log 2>&1
 
 timeout /t 5 /nobreak >nul
 
@@ -28,7 +27,7 @@ if errorlevel 1 (
     echo ERROR: Frontend failed to start.
     echo.
     echo ===== Frontend Error Log =====
-    if exist frontend-error.log type frontend-error.log
+    if exist frontend.log type frontend.log
     exit /b 1
 )
 
