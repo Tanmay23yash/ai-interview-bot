@@ -68,7 +68,18 @@ pipeline {
     }
 }
     
-    
+ stage('Deploy Backend') {
+    steps {
+        withCredentials([
+            string(
+                credentialsId: 'ai-interview-db-url',
+                variable: 'DATABASE_URL'
+            )
+        ]) {
+            bat 'start-backend.bat'
+        }
+    }
+}   
     
     
     
