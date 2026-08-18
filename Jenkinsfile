@@ -62,27 +62,7 @@ pipeline {
                 }
             }
         }
-    stage('Deploy Frontend') {
-    steps {
-        bat 'deploy.bat'
-    }
-}
-    
- stage('Deploy Backend') {
-    steps {
-        withCredentials([
-            string(
-                credentialsId: 'ai-interview-db-url',
-                variable: 'DATABASE_URL'
-            )
-        ]) {
-            bat 'start-backend.bat'
-        }
-    }
-}   
-    
-    
-    
+     
     }
 
     post {
