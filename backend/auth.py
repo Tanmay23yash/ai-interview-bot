@@ -4,9 +4,15 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import os
 
+# Retrieve the secret key from the environment. Do not fall back to a hard‑coded value.
+# Raising an exception at import time ensures the application fails fast if the
+# configuration is missing, preventing insecure defaults.
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set. Set it to a secure random value.")
 
-SECRET_KEY = "SUPER_SECRET_KEY_CHANGE_THIS"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
