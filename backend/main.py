@@ -19,6 +19,8 @@ from gemini import generate_questions
 from database import SessionLocal, engine
 import models, schemas
 from auth import hash_password, verify_password, create_access_token
+from auth import create_reset_token, decode_reset_token, _password_fingerprint
+from mailer import send_reset_email
 
 # Create DB tables
 models.Base.metadata.create_all(bind=engine)
@@ -192,5 +194,33 @@ def delete_resume(
     return {"message": "Resume deleted successfully"}
 
 
+@app.post("/auth/forgot-password")
+def forgot_password(data: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
+    # Same response whether or not the email exists, so accounts can't be probed.
+    user = db.query(models.User).filter(models.User.email == data.email).first()
+
+    if user:
+        token = create_reset_token(user.email, user.hashed_password)
+        frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        try:
+            send_reset_email(user.email, f"{frontend}/reset-password?token={token}")
+        except Exception as e:
+            print("FORGOT PASSWORD EMAIL ERROR:", e)
+
+    return {"message": "If an account exists for that email, a reset link has been sent"}
 
 
+@app.post("/auth/reset-password")
+def reset_password(data: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
+    payload = decode_reset_token(data.token)
+
+    user = db.query(models.User).filter(models.User.email == payload["email"]).first()
+
+    # Fingerprint mismatch means the password already changed, so the link was used.
+    if not user or payload.get("fp") != _password_fingerprint(user.hashed_password):
+        raise HTTPException(status_code=400, detail="Reset link is invalid or has expired")
+
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+    return {"message": "Password updated successfully"}

@@ -243,7 +243,7 @@ export default function Login() {
                   <div className="space-y-2 group">
                     <div className="flex justify-between items-center ml-1">
                       <label className="text-xs uppercase tracking-widest text-zinc-500 font-semibold group-focus-within:text-violet-400 transition-colors">Password</label>
-                      <a href="#" className="text-xs text-zinc-500 hover:text-white transition-colors">Forgot password?</a>
+                      <Link to="/forgot-password" className="text-xs text-zinc-500 hover:text-white transition-colors">Forgot password?</Link>
                     </div>
                     <div className="relative transition-all duration-300 group-focus-within:shadow-[0_0_30px_-10px_rgba(124,58,237,0.3)] rounded-xl">
                       <input

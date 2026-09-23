@@ -1,3 +1,4 @@
+import hashlib
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
@@ -42,3 +43,34 @@ def get_current_user(
 
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+# ---------------- PASSWORD RESET ----------------
+RESET_TOKEN_EXPIRE_MINUTES = 15
+
+
+def _password_fingerprint(hashed_password: str) -> str:
+    # Changes whenever the password changes, so a reset link works only once.
+    return hashlib.sha256(hashed_password.encode()).hexdigest()[:16]
+
+
+def create_reset_token(email: str, hashed_password: str) -> str:
+    # Deliberately has no "sub" claim, so it can never be used as a login token.
+    payload = {
+        "email": email,
+        "purpose": "password_reset",
+        "fp": _password_fingerprint(hashed_password),
+        "exp": datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_reset_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Reset link is invalid or has expired")
+
+    if payload.get("purpose") != "password_reset" or not payload.get("email"):
+        raise HTTPException(status_code=400, detail="Reset link is invalid or has expired")
+
+    return payload
