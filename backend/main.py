@@ -169,7 +169,7 @@ def get_resume_questions(
         "questions": resume.questions
     }
 
-@app.delete("/resumes/{resume}")
+@app.delete("/resumes/{resume_id}")
 def delete_resume(
     resume_id: int,
     db: Session = Depends(get_db),
