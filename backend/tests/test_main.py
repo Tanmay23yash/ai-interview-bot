@@ -1,3 +1,6 @@
+import os
+os.environ["SECRET_KEY"] = "test_secret_key"
+
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
