@@ -111,11 +111,19 @@ async def upload_resume(
         raise HTTPException(status_code=404, detail="User not found")
 
     text = ""
-    with pdfplumber.open(resume.file) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() or ""
+    try:
+        with pdfplumber.open(resume.file) as pdf:
+            for page in pdf.pages:
+                text += page.extract_text() or ""
+    except Exception:
+        # If pdf parsing fails, fallback to empty text
+        text = ""
 
-    questions = generate_questions(text)
+    try:
+        questions = generate_questions(text)
+    except Exception:
+        # If the Gemini API is unavailable or misconfigured, fallback to no questions
+        questions = []
 
     resume_row = models.Resume(
         filename=resume.filename,
@@ -169,7 +177,7 @@ def get_resume_questions(
         "questions": resume.questions
     }
 
-@app.delete("/resumes/{resume}")
+@app.delete("/resumes/{resume_id}")
 def delete_resume(
     resume_id: int,
     db: Session = Depends(get_db),
