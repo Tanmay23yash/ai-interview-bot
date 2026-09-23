@@ -141,6 +141,9 @@ def get_resumes(
         models.User.email == user_email
     ).first()
 
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     return [
         {
             "id": r.id,

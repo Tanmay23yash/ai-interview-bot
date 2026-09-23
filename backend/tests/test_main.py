@@ -83,6 +83,21 @@ def test_resumes_requires_authentication():
 
     assert response.status_code == 403
 
+
+def test_get_resumes_user_not_found():
+    # Create a valid JWT for an email that does not exist in the database
+    from auth import create_access_token
+    fake_email = f"ghost_{uuid4().hex}@example.com"
+    token = create_access_token({"sub": fake_email})
+
+    response = client.get(
+        "/resumes",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "User not found"
+
 def _register_and_capture_reset_link(monkeypatch, email, password):
     import main
 
