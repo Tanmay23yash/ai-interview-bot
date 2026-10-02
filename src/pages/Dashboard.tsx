@@ -63,17 +63,21 @@ function greetingFor(hour: number): string {
   return "Good evening";
 }
 
-/** Reads the email out of the JWT and turns it into a friendly first name. */
-function nameFromToken(token: string | null): string {
-  if (!token) return "there";
+/**
+ * The email and first name the login token carries (the name comes from the
+ * signup form or Google). Older accounts have no name; guessing one from the
+ * email gave "Tanmaysraghuvanshi".
+ */
+function userFromToken(token: string | null): { name: string | null; email: string } {
+  if (!token) return { name: null, email: "" };
   try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const local = String(payload.sub ?? "").split("@")[0];
-    const first = local.split(/[._-]/)[0].replace(/[^a-zA-Z]/g, "");
-    if (!first) return "there";
-    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+    const json = atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
+    // atob yields bytes; decode them as UTF-8 so names like "José" or "प्रिया" survive.
+    const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(json, (c) => c.charCodeAt(0))));
+    const name = typeof payload.name === "string" ? payload.name.trim() : "";
+    return { name: name || null, email: String(payload.sub ?? "") };
   } catch {
-    return "there";
+    return { name: null, email: "" };
   }
 }
 
@@ -222,7 +226,7 @@ export default function Dashboard() {
   const [scrolled, setScrolled] = useState(false);
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
 
-  const name = useMemo(() => nameFromToken(token ?? localStorage.getItem("token")), [token]);
+  const { name, email } = useMemo(() => userFromToken(token ?? localStorage.getItem("token")), [token]);
   const greeting = useMemo(() => greetingFor(new Date().getHours()), []);
 
   const finishIntro = useCallback(() => {
@@ -324,7 +328,7 @@ export default function Dashboard() {
               aria-hidden="true"
               className="hidden h-11 w-11 items-center justify-center rounded-full bg-hm-ink font-medium text-hm-bg sm:flex"
             >
-              {name.charAt(0)}
+              {(name ?? email).charAt(0).toUpperCase()}
             </span>
             <button
               type="button"
@@ -351,11 +355,14 @@ export default function Dashboard() {
               </Reveal>
               <h1 className="mt-6 text-[12.5vw] font-medium leading-[0.96] tracking-[-0.045em] sm:text-7xl lg:text-[88px]">
                 <MaskLine ready={ready} delay={0.15}>
-                  {greeting},
+                  {greeting}
+                  {name ? "," : "."}
                 </MaskLine>
-                <MaskLine ready={ready} delay={0.25}>
-                  {name}.
-                </MaskLine>
+                {name && (
+                  <MaskLine ready={ready} delay={0.25}>
+                    {name}.
+                  </MaskLine>
+                )}
               </h1>
               <Reveal ready={ready} delay={0.45} className="mt-6 max-w-md">
                 <p className="text-lg leading-relaxed text-hm-muted">

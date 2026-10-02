@@ -33,6 +33,13 @@ def unusable_password() -> str:
 def has_usable_password(hashed: str | None) -> bool:
     return bool(hashed) and not hashed.startswith(UNUSABLE_PASSWORD_PREFIX)
 
+def login_token(user) -> str:
+    # The first name rides along so the dashboard can greet without another request.
+    claims = {"sub": user.email}
+    if user.first_name:
+        claims["name"] = user.first_name
+    return create_access_token(claims)
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

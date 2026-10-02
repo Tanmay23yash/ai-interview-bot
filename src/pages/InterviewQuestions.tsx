@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, isValidElement } from "react";
 import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_URL } from "../lib/api";
+import { parseDate } from "../lib/interview";
 import { ArrowLeft, ArrowUpRight, X, Trash2, Copy, Check } from "lucide-react";
 import {
   motion,
@@ -37,10 +38,11 @@ const NOISE =
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const stripExt = (name: string) => name.replace(/\.pdf$/i, "");
+// The API sends naive UTC timestamps; parseDate marks them as UTC.
 const fmtDate = (d: string) =>
-  new Date(d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+  parseDate(d).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
 const fmtDateTime = (d: string) =>
-  new Date(d).toLocaleString(undefined, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  parseDate(d).toLocaleString(undefined, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "section";
 

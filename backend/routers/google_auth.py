@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 import models
 import schemas
-from auth import create_access_token, unusable_password
+from auth import login_token, unusable_password
 from database import get_db
 
 router = APIRouter(prefix="/auth/google", tags=["auth"])
@@ -45,6 +45,11 @@ def verify_credential(credential: str, audience: str) -> dict:
     except (ValueError, google_exceptions.GoogleAuthError) as exc:
         logger.warning("auth.google_token_rejected", extra={"reason": str(exc)[:200]})
         raise HTTPException(status_code=401, detail="Google sign-in failed. Please try again.")
+
+
+def _first_name(claims: dict) -> str | None:
+    name = claims.get("given_name") or (claims.get("name") or "").split(" ")[0]
+    return " ".join(str(name).split())[:50] or None
 
 
 def _find_user(db: Session, email: str) -> models.User | None:
@@ -77,7 +82,7 @@ def google_sign_in(body: schemas.GoogleSignInRequest, db: Session = Depends(get_
     user = _find_user(db, email)
     created = user is None
     if created:
-        user = models.User(email=email, hashed_password=unusable_password())
+        user = models.User(email=email, hashed_password=unusable_password(), first_name=_first_name(claims))
         db.add(user)
         try:
             db.commit()
@@ -87,5 +92,10 @@ def google_sign_in(body: schemas.GoogleSignInRequest, db: Session = Depends(get_
             user = _find_user(db, email)
             created = False
 
+    # Accounts made with the password form before names existed pick it up here.
+    if not user.first_name and _first_name(claims):
+        user.first_name = _first_name(claims)
+        db.commit()
+
     logger.info("auth.google_sign_in", extra={"user_id": user.id, "new_account": created})
-    return {"access_token": create_access_token({"sub": user.email}), "token_type": "bearer"}
+    return {"access_token": login_token(user), "token_type": "bearer"}

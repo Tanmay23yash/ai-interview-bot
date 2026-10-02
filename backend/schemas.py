@@ -1,8 +1,16 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    # Optional for older clients; the signup form always sends it.
+    first_name: str | None = Field(None, max_length=50)
+
+    @field_validator("first_name")
+    @classmethod
+    def tidy_first_name(cls, value: str | None) -> str | None:
+        cleaned = " ".join((value or "").split())
+        return cleaned or None
 
 class UserLogin(BaseModel):
     email: EmailStr
