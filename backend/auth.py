@@ -1,4 +1,6 @@
 import hashlib
+import os
+import secrets
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
@@ -7,7 +9,9 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 
-SECRET_KEY = "SUPER_SECRET_KEY_CHANGE_THIS"
+# Set JWT_SECRET when deployed: whoever knows the signing key can forge a login for any user.
+# The fallback is only for local development (and keeps existing local sessions valid).
+SECRET_KEY = os.getenv("JWT_SECRET") or "SUPER_SECRET_KEY_CHANGE_THIS"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -18,6 +22,16 @@ def hash_password(password: str):
 
 def verify_password(password: str, hashed: str):
     return pwd_context.verify(password, hashed)
+
+# Accounts created with Google have no password. users.hashed_password is NOT NULL,
+# so, like Django, we store a value no password can match; a reset link can still set one.
+UNUSABLE_PASSWORD_PREFIX = "!"
+
+def unusable_password() -> str:
+    return UNUSABLE_PASSWORD_PREFIX + secrets.token_urlsafe(32)
+
+def has_usable_password(hashed: str | None) -> bool:
+    return bool(hashed) and not hashed.startswith(UNUSABLE_PASSWORD_PREFIX)
 
 def create_access_token(data: dict):
     to_encode = data.copy()

@@ -1,6 +1,10 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, KeyRound, ArrowLeft } from "lucide-react";
+import { API_URL } from "../lib/api";
+import { ArrowLeft } from "lucide-react";
+import AuthShell from "../components/auth/AuthShell";
+import { Notice, SubmitButton, TextField } from "../components/auth/AuthFields";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -8,14 +12,14 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setMessage("");
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/forgot-password", {
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -38,50 +42,38 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-xl space-y-5"
-      >
-        <div className="text-center space-y-1">
-          <div className="mx-auto w-14 h-14 rounded-xl bg-indigo-600/20 flex items-center justify-center">
-            <KeyRound className="text-indigo-400" />
-          </div>
-          <h1 className="text-2xl font-bold">Forgot password?</h1>
-          <p className="text-zinc-400 text-sm">
-            Enter your email and we will send you a link to reset it.
-          </p>
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="Enter your email and we'll send you a link to reset it."
+      prompt={{ text: "Remembered it?", label: "Log in", to: "/login" }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <TextField
+          label="Email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="name@company.com"
+        />
+
+        {error && <Notice tone="error">{error}</Notice>}
+        {message && <Notice tone="success">{message}</Notice>}
+
+        <div className="pt-2">
+          <SubmitButton loading={loading} loadingText="Sending…">
+            Send reset link
+          </SubmitButton>
         </div>
-
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@company.com"
-            className="w-full bg-zinc-800 border border-white/10 rounded-lg pl-10 pr-4 py-3 outline-none focus:border-indigo-500"
-          />
-        </div>
-
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-        {message && <p className="text-green-400 text-sm">{message}</p>}
-
-        <button
-          disabled={loading}
-          className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 font-semibold transition"
-        >
-          {loading ? "Sending..." : "Send reset link"}
-        </button>
 
         <Link
-          to="/"
-          className="flex items-center justify-center gap-2 text-sm text-zinc-400 hover:text-white transition"
+          to="/login"
+          className="flex items-center justify-center gap-2 pt-2 text-sm text-lp-ink/55 transition hover:text-lp-ink"
         >
-          <ArrowLeft size={16} /> Back to sign in
+          <ArrowLeft size={16} /> Back to log in
         </Link>
       </form>
-    </div>
+    </AuthShell>
   );
 }

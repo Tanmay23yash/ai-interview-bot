@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { ReactNode } from "react";
-import {
-  animate,
-  motion,
-  useInView,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-} from "framer-motion";
+import { motion, useInView, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
 
-/** Fades, lifts and un-blurs content once it is on screen and the intro has finished. */
+/**
+ * Fades and lifts content once it is on screen and the intro has finished.
+ * Opacity + transform only: animating filter: blur() on large cards forced a
+ * full re-raster every frame and stuttered the entrance.
+ */
 export function Reveal({
   children,
   ready,
@@ -32,31 +29,13 @@ export function Reveal({
     <motion.div
       ref={ref}
       className={className}
-      initial={reduce ? false : { opacity: 0, y, filter: "blur(10px)" }}
-      animate={show ? { opacity: 1, y: 0, filter: "blur(0px)" } : undefined}
+      initial={reduce ? false : { opacity: 0, y }}
+      animate={show ? { opacity: 1, y: 0 } : undefined}
       transition={{ duration: 0.9, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>
   );
-}
-
-/** Counts up to a number, or shows it immediately when motion is reduced. */
-export function CountUp({ value }: { value: number }) {
-  const reduce = useReducedMotion();
-  const [n, setN] = useState(0);
-
-  useEffect(() => {
-    if (reduce) return;
-    const controls = animate(0, value, {
-      duration: 1.4,
-      ease: [0.22, 1, 0.36, 1],
-      onUpdate: (v) => setN(Math.round(v)),
-    });
-    return () => controls.stop();
-  }, [value, reduce]);
-
-  return <>{reduce ? value : n}</>;
 }
 
 /** Wraps a button so it drifts slightly toward the cursor. */
@@ -88,23 +67,25 @@ export function Magnetic({ children, strength = 0.28 }: { children: ReactNode; s
   );
 }
 
-/** Endless horizontal ticker. Content is duplicated so the loop is seamless. */
+/**
+ * Endless horizontal ticker. Content is duplicated so the loop is seamless.
+ * Runs as a CSS animation (see index.css) so it stays smooth even when the main thread is busy.
+ */
 export function Marquee({ children, duration = 38 }: { children: ReactNode; duration?: number }) {
   const reduce = useReducedMotion();
   const mask = "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)";
 
   return (
     <div className="overflow-hidden" style={{ maskImage: mask, WebkitMaskImage: mask }}>
-      <motion.div
-        className="flex w-max"
-        animate={reduce ? undefined : { x: ["0%", "-50%"] }}
-        transition={{ duration, ease: "linear", repeat: Infinity }}
+      <div
+        className="flex w-max will-change-transform"
+        style={reduce ? undefined : { animation: `marquee ${duration}s linear infinite` }}
       >
         <div className="flex shrink-0 items-center">{children}</div>
         <div className="flex shrink-0 items-center" aria-hidden="true">
           {children}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

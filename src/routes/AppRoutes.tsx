@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 
+import Landing from "../pages/Landing";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import ForgotPassword from "../pages/ForgotPassword";
@@ -7,7 +8,9 @@ import ResetPassword from "../pages/ResetPassword";
 import Dashboard from "../pages/Dashboard";
 import UploadResume from "../pages/UploadResume";
 import InterviewQuestions from "../pages/InterviewQuestions";
-import Interview from "../pages/Interview";
+import InterviewSetup from "../pages/InterviewSetup";
+import InterviewSession from "../pages/InterviewSession";
+import InterviewReport from "../pages/InterviewReport";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -17,7 +20,8 @@ export default function AppRoutes() {
     <Routes>
 
       {/* 🌐 Public Routes */}
-      <Route path="/" element={<Login />} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -54,7 +58,25 @@ export default function AppRoutes() {
         path="/interview"
         element={
           <ProtectedRoute>
-            <Interview />
+            <InterviewSetup />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/interview/session/:sessionId"
+        element={
+          <ProtectedRoute>
+            <InterviewSession />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/interview/session/:sessionId/report"
+        element={
+          <ProtectedRoute>
+            <InterviewReport />
           </ProtectedRoute>
         }
       />

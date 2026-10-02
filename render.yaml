@@ -1,0 +1,29 @@
+# Render Blueprint for the FastAPI backend (free plan).
+# Render -> New -> Blueprint -> pick this repo. Values marked "sync: false" are
+# asked for once in the dashboard and never stored in the repo.
+services:
+  - type: web
+    name: tryhiremind-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      # SQLAlchemy 2.0.0 (pinned) does not run on Python 3.13, Render's default.
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: FRONTEND_URL
+        value: https://tryhiremind.vercel.app
+      - key: JWT_SECRET
+        generateValue: true

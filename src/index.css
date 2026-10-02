@@ -1,3 +1,125 @@
 /* Tailwind is loaded once via globals.css (@import "tailwindcss").
    The old v3 @tailwind directives were removed: they made Tailwind v4 emit
    every utility twice, so base classes overrode responsive ones (lg:, sm:...). */
+
+/* Dashboard themes (cominvi-inspired: ink, sage, one orange accent).
+   Set on <html> by useDocumentTheme, and on the dashboard root to avoid a flash. */
+[data-theme="light"] {
+  --hm-bg: #ffffff;
+  --hm-panel: #ebf0ed;
+  --hm-card: #ffffff;
+  --hm-ink: #151515;
+  --hm-muted: rgb(21 21 21 / 0.56);
+  --hm-faint: rgb(21 21 21 / 0.16);
+  --hm-line: rgb(21 21 21 / 0.13);
+  --hm-block: #151515;
+  --hm-on-block: #f1f2ef;
+  --hm-invert: #151515;
+  --hm-on-invert: #ffffff;
+  --hm-accent: #f47920;
+  /* Chart marks: validated per surface (dataviz checks); dark needs a deeper step of the accent. */
+  --hm-chart: #f47920;
+}
+[data-theme="dark"] {
+  --hm-bg: #151515;
+  --hm-panel: #1b1e1c;
+  --hm-card: #222523;
+  --hm-ink: #f1f2ef;
+  --hm-muted: rgb(241 242 239 / 0.58);
+  --hm-faint: rgb(241 242 239 / 0.17);
+  --hm-line: rgb(241 242 239 / 0.12);
+  --hm-block: #0c0d0d;
+  --hm-on-block: #f1f2ef;
+  --hm-invert: #f1f2ef;
+  --hm-on-invert: #151515;
+  --hm-accent: #f47920;
+  --hm-chart: #e06a1b;
+}
+/* Landing and auth pages (butter.video-inspired palette). Light is the default;
+   useDocumentTheme sets [data-theme="dark"]. Always-dark blocks (product mocks,
+   the final CTA band) use --lp-showcase / --lp-band plus a faint --lp-edge,
+   so they stay distinct on a dark page. */
+:root,
+[data-theme="light"] {
+  --lp-bg: #fafafa;
+  --lp-ink: #0f0f0f;
+  --lp-surface: #ededed;
+  --lp-surface-soft: #f2f2f2;
+  --lp-surface-hover: #e8e8e8;
+  --lp-surface-strong: #e2e2e2;
+  --lp-card: #ffffff;
+  --lp-field-focus: #ffffff;
+  --lp-button-hover: #2a2a2a;
+  --lp-showcase: #161616;
+  --lp-band: #0f0f0f;
+  --lp-edge: rgb(0 0 0 / 0.05);
+  --lp-error: #9c0c55;
+  --lp-success: #2c6b12;
+}
+[data-theme="dark"] {
+  --lp-bg: #0f0f0f;
+  --lp-ink: #fafafa;
+  --lp-surface: #1c1c1c;
+  --lp-surface-soft: #171717;
+  --lp-surface-hover: #232323;
+  --lp-surface-strong: #2a2a2a;
+  --lp-card: #171717;
+  --lp-field-focus: #000000;
+  --lp-button-hover: #d9d9d9;
+  --lp-showcase: #181818;
+  --lp-band: #000000;
+  --lp-edge: rgb(255 255 255 / 0.08);
+  --lp-error: #ff9bcd;
+  --lp-success: #9bdc7c;
+}
+html[data-theme] {
+  background-color: var(--hm-bg);
+}
+
+/* Theme switch: the new theme is revealed by a circular wipe (see ThemeToggle).
+   Turn off the default cross-fade so only the wipe plays. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Ambient loops run as CSS transform animations so the browser can play them
+   on the compositor thread, with no per-frame JavaScript, layout or repaint. */
+@keyframes marquee {
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes aurora-a {
+  50% { transform: translate3d(120px, 80px, 0); }
+  100% { transform: translate3d(-40px, 140px, 0); }
+}
+@keyframes aurora-b {
+  50% { transform: translate3d(-140px, 100px, 0); }
+  100% { transform: translate3d(40px, -60px, 0); }
+}
+@keyframes aurora-c {
+  50% { transform: translate3d(160px, -60px, 0); }
+  100% { transform: translate3d(-80px, 40px, 0); }
+}
+@keyframes float-tilt {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10px) rotate(-1deg); }
+}
+@keyframes float-up {
+  50% { transform: translateY(-8px); }
+}
+@keyframes float-down {
+  50% { transform: translateY(9px); }
+}
+@keyframes scan {
+  from { transform: translateY(-110%); }
+  84%, to { transform: translateY(520%); }
+}
+@keyframes orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes tunnel {
+  from { transform: scale(0.06); opacity: 0; }
+  20% { opacity: 1; }
+  to { transform: scale(1.5); opacity: 0; }
+}

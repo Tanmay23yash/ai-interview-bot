@@ -81,7 +81,7 @@ def test_invalid_login():
 def test_resumes_requires_authentication():
     response = client.get("/resumes")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 def test_get_resumes_user_not_found():
