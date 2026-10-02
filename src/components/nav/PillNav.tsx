@@ -13,7 +13,15 @@ import { Menu, X } from "lucide-react";
  */
 
 export type PillNavLink = { label: string; to?: string; href?: string; end?: boolean };
-export type PillNavAction = { label: string; to?: string; href?: string; onClick?: () => void; icon?: ReactNode };
+export type PillNavAction = {
+  label: string;
+  /** Shown instead of label below sm. */
+  shortLabel?: string;
+  to?: string;
+  href?: string;
+  onClick?: () => void;
+  icon?: ReactNode;
+};
 
 // No display class here: each use sets one (inline-flex, or hidden lg:inline-flex),
 // since two display utilities on one element do not reliably resolve by class order.
@@ -27,7 +35,14 @@ function ActionLink({ action, className, onDone }: { action: PillNavAction; clas
   const content = (
     <>
       {action.icon}
-      {action.label}
+      {action.shortLabel ? (
+        <>
+          <span className="sm:hidden">{action.shortLabel}</span>
+          <span className="hidden sm:inline">{action.label}</span>
+        </>
+      ) : (
+        action.label
+      )}
     </>
   );
   if (action.to)
@@ -81,6 +96,7 @@ export default function PillNav({
   brandLabel,
   links = [],
   tools,
+  toolsBelowSm = "bar",
   note,
   secondary,
   cta,
@@ -97,8 +113,10 @@ export default function PillNav({
   brandLabel: string;
   /** Page links: centred from lg up, in the drop-down panel below. */
   links?: PillNavLink[];
-  /** Small round controls before the CTA, at every size (theme switch, History). */
+  /** Small round controls before the CTA (theme switch, History). */
   tools?: ReactNode;
+  /** "panel" moves the tools into the drop-down panel below sm, for crowded bars. */
+  toolsBelowSm?: "bar" | "panel";
   /** Short text before the CTA from sm up, e.g. "New here?". */
   note?: string;
   /** A quiet text link before the CTA from lg up (e.g. Log in); in the panel below lg. */
@@ -122,7 +140,8 @@ export default function PillNav({
   const toggle = useRef<HTMLButtonElement>(null);
 
   const ctaInPanel = !!cta && !ctaOnPhone;
-  const hasPanel = links.length > 0 || !!secondary || ctaInPanel;
+  const toolsInPanel = !!tools && toolsBelowSm === "panel";
+  const hasPanel = links.length > 0 || !!secondary || ctaInPanel || toolsInPanel;
   const close = () => setOpen(false);
 
   // Escape or a tap outside closes the panel.
@@ -178,7 +197,7 @@ export default function PillNav({
           )}
 
           <div className="flex shrink-0 items-center gap-2 lg:justify-self-end">
-            {tools}
+            {tools && <div className={`items-center gap-2 ${toolsInPanel ? "hidden sm:flex" : "flex"}`}>{tools}</div>}
             {note && <span className="hidden whitespace-nowrap pl-1 text-sm text-white/55 sm:inline">{note}</span>}
             {secondary && <ActionLink action={secondary} className={`${QUIET} hidden lg:inline-flex`} />}
             {cta && <ActionLink action={cta} className={`${CTA} ${ctaInPanel ? "hidden lg:inline-flex" : "inline-flex"}`} />}
@@ -217,8 +236,9 @@ export default function PillNav({
                   ))}
                 </ul>
               )}
-              {(secondary || ctaInPanel) && (
+              {(secondary || ctaInPanel || toolsInPanel) && (
                 <div className={`flex flex-col gap-2 ${links.length > 0 ? "mt-5 border-t border-white/10 pt-5" : ""}`}>
+                  {toolsInPanel && <div className="flex justify-center pb-1 sm:hidden">{tools}</div>}
                   {secondary && (
                     <ActionLink action={secondary} className={`${QUIET} flex w-full ring-1 ring-white/20`} onDone={close} />
                   )}

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChromeTile, FloatingCharm, HiredDisc, InflatedWord } from "../landing/Charms";
 import { EXAMPLES } from "../landing/examples";
-import { NavBrand } from "../landing/Logo";
+import { NavWordmark } from "../landing/Logo";
 import PillNav from "../nav/PillNav";
 import { useParallax } from "../landing/useParallax";
 import ThemeToggle from "../dashboard/ThemeToggle";
@@ -102,7 +102,8 @@ export default function AuthShell({
   title: string;
   subtitle: ReactNode;
   /** Top-right "switch page" link, e.g. "New here? Create an account". */
-  prompt?: { text: string; label: string; to: string };
+  /** shortLabel replaces label on phones, where the bar is narrow. */
+  prompt?: { text: string; label: string; shortLabel?: string; to: string };
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -118,12 +119,12 @@ export default function AuthShell({
         <PillNav
           position="static"
           inset={false}
-          brand={<NavBrand />}
+          brand={<NavWordmark />}
           brandTo="/"
           brandLabel="HireMind home"
           tools={<ThemeToggle theme={theme} onChange={setTheme} showLabel={false} tone="inverse" />}
           note={prompt?.text}
-          cta={prompt && { label: prompt.label, to: prompt.to }}
+          cta={prompt && { label: prompt.label, shortLabel: prompt.shortLabel, to: prompt.to }}
         />
 
         <main className="flex flex-1 items-center justify-center py-14">

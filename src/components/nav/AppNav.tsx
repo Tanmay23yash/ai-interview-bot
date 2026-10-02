@@ -6,6 +6,7 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import type { Theme } from "../../hooks/useDocumentTheme";
 import ThemeToggle from "../dashboard/ThemeToggle";
+import { NavWordmark } from "../landing/Logo";
 import PillNav from "./PillNav";
 
 const LINKS = [
@@ -38,7 +39,7 @@ export default function AppNav({
 
   return (
     <PillNav
-      brand={<span className="pl-3 pr-1 font-['Schibsted_Grotesk'] text-lg font-bold tracking-tight">HireMind</span>}
+      brand={<NavWordmark />}
       brandTo="/dashboard"
       brandLabel="HireMind dashboard"
       links={LINKS}

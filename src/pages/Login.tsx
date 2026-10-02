@@ -42,7 +42,7 @@ export default function Login() {
     <AuthShell
       title="Welcome back."
       subtitle="Log in to see your resumes and the questions written for them."
-      prompt={{ text: "New here?", label: "Create an account", to: "/signup" }}
+      prompt={{ text: "New here?", label: "Create an account", shortLabel: "Sign up", to: "/signup" }}
     >
       <GoogleButton mode="signin" />
       <form onSubmit={handleSubmit} className="space-y-5">

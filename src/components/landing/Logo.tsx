@@ -1,4 +1,4 @@
-/** The glossy blue sphere from the logo, on its own (the nav pill sets it in a white circle). */
+/** The glossy blue sphere from the logo, on its own. */
 export function LogoSphere({ size = 24 }: { size?: number }) {
   return (
     <span
@@ -23,14 +23,7 @@ export default function Logo() {
   );
 }
 
-/** The nav pill's brand on public pages: the sphere in a white circle, with the wordmark from sm up. */
-export function NavBrand() {
-  return (
-    <>
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white">
-        <LogoSphere size={22} />
-      </span>
-      <span className="hidden pr-2 font-['Schibsted_Grotesk'] text-lg font-bold tracking-tight sm:inline">HireMind</span>
-    </>
-  );
+/** The brand inside the nav pill on every page: the wordmark alone, no sphere. */
+export function NavWordmark() {
+  return <span className="pl-3 pr-1 font-['Schibsted_Grotesk'] text-lg font-bold tracking-tight">HireMind</span>;
 }
