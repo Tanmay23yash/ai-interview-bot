@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 
 type AuthContextType = {
   token: string | null;
@@ -9,14 +9,9 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
+  // Read synchronously: with an effect, the first render had no token and
+  // ProtectedRoute bounced every page reload to /login.
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
 
   function login(newToken: string) {
     localStorage.setItem("token", newToken);

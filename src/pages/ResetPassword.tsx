@@ -1,6 +1,10 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Lock, ShieldCheck } from "lucide-react";
+import { API_URL } from "../lib/api";
+import { ArrowRight } from "lucide-react";
+import AuthShell from "../components/auth/AuthShell";
+import { Notice, PasswordField, SubmitButton } from "../components/auth/AuthFields";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -13,7 +17,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -29,7 +33,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/auth/reset-password", {
+      const res = await fetch(`${API_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: password }),
@@ -43,8 +47,8 @@ export default function ResetPassword() {
         );
       }
 
-      setSuccess("Password updated. Redirecting to sign in...");
-      setTimeout(() => navigate("/"), 1500);
+      setSuccess("Password updated. Redirecting to log in…");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -54,76 +58,64 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-        <div className="w-full max-w-md rounded-2xl bg-zinc-900 border border-white/10 p-8 text-center space-y-4">
-          <h1 className="text-2xl font-bold">Invalid reset link</h1>
-          <p className="text-zinc-400 text-sm">This link is missing its token.</p>
-          <Link to="/forgot-password" className="text-indigo-400 hover:text-indigo-300 underline">
-            Request a new link
-          </Link>
-        </div>
-      </div>
+      <AuthShell
+        title="This link doesn't work."
+        subtitle="The reset link is missing its token. Request a fresh one and try again."
+        prompt={{ text: "Remembered it?", label: "Log in", to: "/login" }}
+      >
+        <Link
+          to="/forgot-password"
+          className="group flex w-full items-center justify-center gap-2 rounded-full bg-lp-ink px-6 py-4 text-base font-medium text-lp-bg transition hover:bg-lp-button-hover"
+        >
+          Request a new link
+          <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
+        </Link>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-xl space-y-5"
-      >
-        <div className="text-center space-y-1">
-          <div className="mx-auto w-14 h-14 rounded-xl bg-indigo-600/20 flex items-center justify-center">
-            <ShieldCheck className="text-indigo-400" />
-          </div>
-          <h1 className="text-2xl font-bold">Set a new password</h1>
-          <p className="text-zinc-400 text-sm">Choose a password with at least 8 characters.</p>
-        </div>
-
-        <div className="space-y-3">
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="New password"
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg pl-10 pr-4 py-3 outline-none focus:border-indigo-500"
-            />
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
-            <input
-              type="password"
-              required
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Confirm new password"
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg pl-10 pr-4 py-3 outline-none focus:border-indigo-500"
-            />
-          </div>
-        </div>
+    <AuthShell
+      title="Set a new password."
+      subtitle="Choose a password with at least 8 characters."
+      prompt={{ text: "Remembered it?", label: "Log in", to: "/login" }}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <PasswordField
+          label="New password"
+          required
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="At least 8 characters"
+        />
+        <PasswordField
+          label="Confirm password"
+          required
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Type it again"
+        />
 
         {error && (
-          <p className="text-red-400 text-sm">
+          <Notice tone="error">
             {error}{" "}
             {error.includes("invalid or has expired") && (
-              <Link to="/forgot-password" className="underline">
+              <Link to="/forgot-password" className="font-medium underline underline-offset-2">
                 Request a new link
               </Link>
             )}
-          </p>
+          </Notice>
         )}
-        {success && <p className="text-green-400 text-sm">{success}</p>}
+        {success && <Notice tone="success">{success}</Notice>}
 
-        <button
-          disabled={loading || !!success}
-          className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 font-semibold transition"
-        >
-          {loading ? "Saving..." : "Reset password"}
-        </button>
+        <div className="pt-2">
+          <SubmitButton loading={loading} loadingText="Saving…" disabled={!!success}>
+            Reset password
+          </SubmitButton>
+        </div>
       </form>
-    </div>
+    </AuthShell>
   );
 }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -13,6 +13,11 @@ class Token(BaseModel):
     token_type: str
 
 
+class GoogleSignInRequest(BaseModel):
+    # The ID token (a JWT) that Google Identity Services hands the browser.
+    credential: str = Field(min_length=1, max_length=4096)
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
@@ -20,3 +25,27 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str = Field(min_length=8)
+
+
+class GapAnalysisRequest(BaseModel):
+    resume_id: int
+    job_description_id: int
+    refresh: bool = False
+
+
+class InterviewStartRequest(BaseModel):
+    resume_id: int
+    job_description_id: int | None = None
+    max_questions: int = Field(8, ge=3, le=15)
+    starting_difficulty: int = Field(2, ge=1, le=5)
+
+
+class AnswerRequest(BaseModel):
+    answer: str = Field("", max_length=8000)
+    skipped: bool = False
+
+    @model_validator(mode="after")
+    def answer_required_unless_skipped(self):
+        if not self.skipped and not self.answer.strip():
+            raise ValueError("Write an answer, or skip the question")
+        return self

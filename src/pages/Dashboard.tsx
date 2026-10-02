@@ -1,60 +1,47 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_URL } from "../lib/api";
 import {
   AnimatePresence,
   motion,
+  useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useSpring,
+  useTransform,
 } from "framer-motion";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Brain,
-  FileText,
-  Lightbulb,
-  LogOut,
-  MessageSquare,
-  Sparkles,
-  Target,
-  Upload,
-} from "lucide-react";
+import type { MotionValue } from "framer-motion";
+import { CalendarDays, Clock3, FileText, Files, Layers, LogOut, Play, ScanLine, Target, Upload } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import { useDocumentTheme } from "../hooks/useDocumentTheme";
 import Preloader from "../components/dashboard/Preloader";
-import Backdrop from "../components/dashboard/Backdrop";
-import SpotlightCard from "../components/dashboard/SpotlightCard";
-import { CountUp, Magnetic, Marquee, Reveal } from "../components/dashboard/motionBits";
+import ThemeToggle from "../components/dashboard/ThemeToggle";
+import TrackDial from "../components/dashboard/TrackDial";
+import { OrbitArt, QuestionsArt, ResumeArt, Tunnel } from "../components/dashboard/art";
+import { ArrowLink, Scramble, SectionTag } from "../components/dashboard/ui";
+import { Reveal } from "../components/dashboard/motionBits";
+import Logo from "../components/landing/Logo";
 
-const API = "http://127.0.0.1:8000";
+/*
+ * Signed-in home. Visual language after cominvi.com.mx: flat ink/sage/white
+ * surfaces with one orange accent, big medium-weight statements, mono labels,
+ * stacked section tags, hairline stat grids and a tick-mark dial. Light and
+ * dark themes come from CSS variables (index.css); every animation is
+ * transform/opacity only.
+ */
+
+const API = API_URL;
 const INTRO_KEY = "hiremind_intro_seen";
+const YEAR = new Date().getFullYear();
+const MONO = "font-['Geist_Mono'] uppercase";
 
 type Resume = { id: number; filename: string; created_at: string };
 
-const TOPICS = [
-  "Data Structures",
-  "System Design",
-  "Machine Learning",
-  "Behavioral",
-  "Python",
-  "React",
-  "SQL",
-  "Cloud & DevOps",
-  "Leadership",
-  "Problem Solving",
-];
-
-const TIPS = [
-  "Answer behavioral questions with the STAR method: Situation, Task, Action, Result.",
-  "Think out loud. Interviewers grade your reasoning as much as your final answer.",
-  "Quantify your impact. Numbers make a project on your resume memorable.",
-  "Prepare two or three questions to ask back. It shows real interest in the role.",
-  "Rehearse your answers out loud. Spoken practice exposes gaps that reading does not.",
-];
-
 const STEPS = [
-  { icon: Upload, title: "Upload your resume", text: "Drop in a PDF. We read every project and skill." },
-  { icon: Brain, title: "Gemini analyses it", text: "Tailored technical, ML and behavioral questions." },
+  { icon: Upload, title: "Upload your resume", text: "Drop in a PDF. Every page is read." },
+  { icon: ScanLine, title: "Gemini analyses it", text: "Technical, ML and behavioral questions, grouped by topic." },
   { icon: Target, title: "Practice with intent", text: "Rehearse the exact questions your resume invites." },
 ];
 
@@ -95,8 +82,12 @@ function parseDate(iso: string): Date {
   return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
 }
 
+function secondsSince(iso: string): number {
+  return Math.max(0, (Date.now() - parseDate(iso).getTime()) / 1000);
+}
+
 function timeAgo(iso: string): string {
-  const seconds = Math.max(0, (Date.now() - parseDate(iso).getTime()) / 1000);
+  const seconds = secondsSince(iso);
   if (seconds < 60) return "just now";
   const units: [number, string][] = [
     [60, "minute"],
@@ -116,16 +107,44 @@ function timeAgo(iso: string): string {
   return `${value} ${label}${value === 1 ? "" : "s"} ago`;
 }
 
-/* ---------------- small pieces ---------------- */
+/** Compact age for the stat grid: "now", "12m", "5h", "3d", "2mo". */
+function shortAgo(iso: string): string {
+  const s = secondsSince(iso);
+  if (s < 60) return "now";
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  if (s < 2592000) return `${Math.floor(s / 86400)}d`;
+  return `${Math.floor(s / 2592000)}mo`;
+}
 
-function Word({ children, ready, index, className = "" }: { children: string; ready: boolean; index: number; className?: string }) {
+function uploadsThisWeek(resumes: Resume[]): number {
+  return resumes.filter((r) => secondsSince(r.created_at) < 7 * 86400).length;
+}
+
+function overview(resumes: Resume[] | null, failed: boolean, latest: Resume | undefined): string {
+  if (failed) return "We couldn't reach your sessions just now. Check that the backend is running, then refresh the page.";
+  if (resumes === null) return "Loading your workspace and the sessions you have saved so far.";
+  if (!latest) {
+    return "Your workspace is ready. Upload a resume and HireMind will turn every line of it into the questions an interviewer would ask.";
+  }
+  const count = resumes.length === 1 ? "one resume" : `${resumes.length} resumes`;
+  return `You've analysed ${count} with HireMind. The latest, ${latest.filename}, landed ${timeAgo(latest.created_at)} and its questions are waiting for you.`;
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/* ---------------- pieces ---------------- */
+
+/** One headline line that slides up from behind a mask once the intro is done. */
+function MaskLine({ children, ready, delay }: { children: ReactNode; ready: boolean; delay: number }) {
+  const reduce = useReducedMotion();
   return (
-    <span className="mr-[0.25em] inline-block overflow-hidden pb-[0.12em] align-bottom">
+    <span className="block overflow-hidden pb-[0.06em]">
       <motion.span
-        className={`inline-block ${className}`}
-        initial={{ y: "115%", rotate: 4 }}
-        animate={ready ? { y: 0, rotate: 0 } : undefined}
-        transition={{ duration: 1, delay: 0.15 + index * 0.09, ease: [0.22, 1, 0.36, 1] }}
+        className="block"
+        initial={reduce ? false : { y: "105%" }}
+        animate={ready ? { y: "0%" } : undefined}
+        transition={{ duration: 1, delay, ease: [0.22, 1, 0.36, 1] }}
       >
         {children}
       </motion.span>
@@ -133,111 +152,54 @@ function Word({ children, ready, index, className = "" }: { children: string; re
   );
 }
 
-function ResumeIllustration() {
-  const reduce = useReducedMotion();
-  const line = "h-2 rounded-full bg-white/10";
-
+/** Small dark card with a white mono label bar, like cominvi's hero photo cards. */
+function HeroCard({ to, label, children }: { to: string; label: string; children: ReactNode }) {
   return (
-    <div className="relative mx-auto h-56 w-44 sm:h-64 sm:w-52" aria-hidden="true">
-      <div className="absolute inset-0 rounded-full bg-violet-500/30 blur-[70px]" />
-
-      <motion.div
-        className="absolute inset-0 overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-b from-zinc-800/90 to-zinc-900/90 p-4 shadow-2xl shadow-violet-900/40"
-        animate={reduce ? undefined : { y: [0, -10, 0], rotate: [-3, -1, -3] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        style={{ rotate: -3 }}
+    <Link
+      to={to}
+      className="group relative block aspect-[4/3] overflow-hidden rounded-md border border-hm-line bg-hm-block outline-none focus-visible:ring-2 focus-visible:ring-hm-accent sm:aspect-[3/2]"
+    >
+      <div className="absolute inset-0 flex items-center justify-center p-4 pb-11 transition-transform duration-500 group-hover:scale-[1.05]">
+        {children}
+      </div>
+      <span
+        className={`absolute inset-x-2 bottom-2 flex items-center justify-between rounded-[3px] bg-white px-1.5 py-1 text-[11px] text-[#151515] transition-colors group-hover:bg-hm-accent ${MONO}`}
       >
-        <div className="mb-4 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400" />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-2 w-2/3 rounded-full bg-white/25" />
-            <div className="h-1.5 w-1/2 rounded-full bg-white/10" />
-          </div>
-        </div>
-        <div className="space-y-2.5">
-          <div className={`${line} w-full`} />
-          <div className={`${line} w-11/12`} />
-          <div className={`${line} w-4/5`} />
-          <div className="h-2 w-1/3 rounded-full bg-violet-400/40" />
-          <div className={`${line} w-full`} />
-          <div className={`${line} w-3/4`} />
-          <div className={`${line} w-5/6`} />
-          <div className={`${line} w-2/3`} />
-        </div>
-
-        {/* scanning beam */}
-        {!reduce && (
-          <motion.div
-            className="absolute inset-x-0 h-14 bg-gradient-to-b from-transparent via-violet-400/30 to-transparent"
-            animate={{ top: ["-20%", "110%"] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.6 }}
-          />
-        )}
-      </motion.div>
-
-      <motion.div
-        className="absolute -right-6 top-6 flex items-center gap-1.5 rounded-full border border-white/15 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-medium text-violet-200 shadow-lg backdrop-blur"
-        animate={reduce ? undefined : { y: [0, -8, 0] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-      >
-        <Sparkles className="h-3 w-3" /> 12 questions
-      </motion.div>
-      <motion.div
-        className="absolute -left-8 bottom-10 flex items-center gap-1.5 rounded-full border border-white/15 bg-zinc-900/90 px-3 py-1.5 text-[11px] font-medium text-cyan-200 shadow-lg backdrop-blur"
-        animate={reduce ? undefined : { y: [0, 9, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Target className="h-3 w-3" /> Tailored to you
-      </motion.div>
-    </div>
+        {label}
+        <Play size={9} fill="currentColor" strokeWidth={0} />
+      </span>
+    </Link>
   );
 }
 
-function TipCard() {
-  const reduce = useReducedMotion();
-  const [index, setIndex] = useState(0);
+function StatementWord({ children, progress, range }: { children: string; progress: MotionValue<number>; range: [number, number] }) {
+  const opacity = useTransform(progress, range, [0.18, 1]);
+  return <motion.span style={{ opacity }}>{children} </motion.span>;
+}
 
-  useEffect(() => {
-    if (reduce) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % TIPS.length), 6000);
-    return () => clearInterval(id);
-  }, [reduce]);
+/** Large statement whose words fill in as it scrolls through the viewport. */
+function Statement({ text, tag }: { text: string; tag: ReactNode }) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLParagraphElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 85%", "end 50%"] });
+  const words = text.split(" ");
 
   return (
-    <div className="flex h-full flex-col p-7">
-      <div className="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-amber-300/80">
-        <Lightbulb className="h-4 w-4" /> Interview tip
-      </div>
-
-      <div className="min-h-[5.5rem] flex-1">
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={index}
-            initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -14, filter: "blur(6px)" }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-lg font-light leading-relaxed text-zinc-200"
-          >
-            {TIPS[index]}
-          </motion.p>
-        </AnimatePresence>
-      </div>
-
-      <div className="mt-5 flex gap-1.5">
-        {TIPS.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Show tip ${i + 1}`}
-            onClick={() => setIndex(i)}
-            className={`h-1 rounded-full transition-all duration-500 ${
-              i === index ? "w-8 bg-amber-300" : "w-3 bg-white/15 hover:bg-white/30"
-            }`}
-          />
-        ))}
-      </div>
-    </div>
+    <p
+      ref={ref}
+      className="max-w-[1120px] text-[8vw] font-medium leading-[1.04] tracking-[-0.04em] sm:text-5xl lg:text-[56px]"
+    >
+      {tag}
+      {words.map((word, i) =>
+        reduce ? (
+          <span key={i}>{word} </span>
+        ) : (
+          <StatementWord key={i} progress={scrollYProgress} range={[i / words.length, (i + 1) / words.length]}>
+            {word}
+          </StatementWord>
+        )
+      )}
+    </p>
   );
 }
 
@@ -247,6 +209,7 @@ export default function Dashboard() {
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
+  const [theme, setTheme] = useDocumentTheme();
 
   const [showIntro, setShowIntro] = useState(shouldShowIntro);
   const ready = !showIntro;
@@ -254,8 +217,10 @@ export default function Dashboard() {
   const [resumes, setResumes] = useState<Resume[] | null>(null);
   const [failed, setFailed] = useState(false);
 
-  const { scrollYProgress } = useScroll();
+  const { scrollY, scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30 });
+  const [scrolled, setScrolled] = useState(false);
+  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
 
   const name = useMemo(() => nameFromToken(token ?? localStorage.getItem("token")), [token]);
   const greeting = useMemo(() => greetingFor(new Date().getHours()), []);
@@ -282,7 +247,7 @@ export default function Dashboard() {
       .then(async (res) => {
         if (res.status === 401 || res.status === 403) {
           logout();
-          navigate("/");
+          navigate("/login");
           return;
         }
         if (!res.ok) throw new Error("Request failed");
@@ -297,316 +262,306 @@ export default function Dashboard() {
     return () => controller.abort();
   }, [token, logout, navigate]);
 
-  const recent = useMemo(
-    () =>
-      [...(resumes ?? [])]
-        .sort((a, b) => parseDate(b.created_at).getTime() - parseDate(a.created_at).getTime())
-        .slice(0, 4),
+  const sorted = useMemo(
+    () => [...(resumes ?? [])].sort((a, b) => parseDate(b.created_at).getTime() - parseDate(a.created_at).getTime()),
     [resumes]
   );
+  const latest = sorted[0];
+  const recent = sorted.slice(0, 6);
+  const thisWeek = useMemo(() => uploadsThisWeek(resumes ?? []), [resumes]);
+
+  const stats = [
+    { icon: Files, value: resumes === null ? "--" : pad(resumes.length), label: "Resumes analysed" },
+    { icon: CalendarDays, value: resumes === null ? "--" : pad(thisWeek), label: "Uploads this week" },
+    { icon: Clock3, value: latest ? shortAgo(latest.created_at) : "--", label: "Since last upload" },
+    { icon: Layers, value: "03", label: "Question tracks" },
+  ];
 
   function handleSignOut() {
     logout();
     navigate("/");
   }
 
-
   return (
-    <div className="relative min-h-screen bg-[#07070b] font-['Outfit',sans-serif] text-white selection:bg-violet-500/40">
+    <div
+      data-theme={theme}
+      className="min-h-screen bg-hm-bg font-['Geist',sans-serif] text-hm-ink antialiased selection:bg-hm-accent/30"
+    >
       <AnimatePresence>{showIntro && <Preloader onDone={finishIntro} />}</AnimatePresence>
 
-      <Backdrop />
-
       {/* scroll progress */}
-      <motion.div
-        className="fixed left-0 right-0 top-0 z-50 h-[2px] origin-left bg-gradient-to-r from-violet-500 via-fuchsia-400 to-cyan-300"
-        style={{ scaleX: progress }}
-      />
+      <motion.div className="fixed inset-x-0 top-0 z-[60] h-[2px] origin-left bg-hm-accent" style={{ scaleX: progress }} />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-5 pb-20 sm:px-8">
-        {/* ---------------- NAV ---------------- */}
-        <motion.header
-          initial={reduce ? false : { y: -40, opacity: 0 }}
-          animate={ready ? { y: 0, opacity: 1 } : undefined}
-          transition={{ duration: 0.9, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="sticky top-4 z-40 mt-4"
-        >
-          <nav className="flex items-center justify-between rounded-full border border-white/10 bg-zinc-900/60 py-2 pl-5 pr-2 shadow-2xl shadow-black/40 backdrop-blur-xl">
-            <Link to="/dashboard" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              HireMind
+      {/* ---------------- NAV ---------------- */}
+      <motion.header
+        initial={reduce ? false : { y: -24, opacity: 0 }}
+        animate={ready ? { y: 0, opacity: 1 } : undefined}
+        transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
+          scrolled ? "border-hm-line bg-hm-bg" : "border-transparent"
+        }`}
+      >
+        <nav aria-label="Dashboard" className="flex h-[76px] items-center justify-between gap-4 px-5 sm:px-8">
+          <Link to="/dashboard" aria-label="HireMind dashboard">
+            <Logo />
+          </Link>
+
+          <div className={`hidden items-center gap-8 text-xs md:flex ${MONO}`}>
+            <Link to="/upload" className="transition-colors hover:text-hm-accent">
+              Upload
             </Link>
+            <Link to="/questions" className="transition-colors hover:text-hm-accent">
+              My questions
+            </Link>
+            <Link to="/interview" className="transition-colors hover:text-hm-accent">
+              Mock interview
+            </Link>
+          </div>
 
-            <div className="hidden items-center gap-1 text-sm text-zinc-400 sm:flex">
-              <Link to="/upload" className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white">
-                Upload
-              </Link>
-              <Link to="/questions" className="rounded-full px-4 py-2 transition hover:bg-white/5 hover:text-white">
-                My questions
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/80 to-cyan-400/80 text-sm font-semibold"
-                aria-hidden="true"
-              >
-                {name.charAt(0)}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-zinc-300 transition hover:border-red-400/40 hover:bg-red-500/10 hover:text-red-300"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign out</span>
-              </button>
-            </div>
-          </nav>
-        </motion.header>
-
-        {/* ---------------- HERO ---------------- */}
-        <section className="pb-14 pt-16 sm:pt-24">
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-            </span>
-            <span className="max-w-[16rem] truncate">
-              {greeting}, {name}
-            </span>
-          </motion.div>
-
-          <h1
-            className="max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tighter sm:text-7xl lg:text-8xl"
-            aria-label="Ace your next interview."
-          >
-            <Word ready={ready} index={0}>Ace</Word>
-            <Word ready={ready} index={1}>your</Word>
-            <Word ready={ready} index={2}>next</Word>
-            <Word
-              ready={ready}
-              index={3}
-              className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-300 bg-clip-text text-transparent"
+          <div className="flex items-center gap-3 sm:gap-4">
+            <ThemeToggle theme={theme} onChange={setTheme} />
+            <span
+              aria-hidden="true"
+              className="hidden h-11 w-11 items-center justify-center rounded-full bg-hm-ink font-medium text-hm-bg sm:flex"
             >
-              interview.
-            </Word>
-          </h1>
+              {name.charAt(0)}
+            </span>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              className={`flex h-11 items-center gap-2 rounded-full border border-hm-line px-4 text-xs transition-colors hover:border-hm-ink ${MONO}`}
+            >
+              <LogOut size={14} strokeWidth={1.5} />
+              <span className="hidden sm:inline">Sign out</span>
+            </button>
+          </div>
+        </nav>
+      </motion.header>
 
-          <Reveal ready={ready} delay={0.7} className="mt-8 max-w-xl">
-            <p className="text-lg font-light leading-relaxed text-zinc-400 sm:text-xl">
-              Turn your resume into a personal question bank. Practice exactly what interviewers will ask you.
-            </p>
-          </Reveal>
+      <main>
+        {/* ---------------- HERO ---------------- */}
+        <section className="relative flex min-h-[100svh] flex-col overflow-hidden px-5 pb-6 pt-28 sm:px-8 sm:pb-8">
+          <Tunnel />
 
-          <Reveal ready={ready} delay={0.85} className="mt-10 flex flex-wrap items-center gap-4">
-            <Magnetic>
-              <button
-                onClick={() => navigate("/upload")}
-                className="group flex items-center gap-3 rounded-full bg-white px-7 py-4 font-semibold text-black shadow-[0_0_40px_-8px_rgba(255,255,255,0.5)] transition hover:shadow-[0_0_60px_-6px_rgba(167,139,250,0.8)]"
-              >
-                <Upload className="h-5 w-5" />
-                Upload resume
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </button>
-            </Magnetic>
-            <Magnetic>
-              <button
-                onClick={() => navigate("/questions")}
-                className="flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-7 py-4 font-medium text-white backdrop-blur transition hover:border-white/30 hover:bg-white/10"
-              >
-                <MessageSquare className="h-5 w-5" />
-                View questions
-              </button>
-            </Magnetic>
+          <div className="relative flex flex-1 flex-col justify-center gap-12 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <Reveal ready={ready} y={12}>
+                <SectionTag index="S.00" label="Workspace" />
+              </Reveal>
+              <h1 className="mt-6 text-[12.5vw] font-medium leading-[0.96] tracking-[-0.045em] sm:text-7xl lg:text-[88px]">
+                <MaskLine ready={ready} delay={0.15}>
+                  {greeting},
+                </MaskLine>
+                <MaskLine ready={ready} delay={0.25}>
+                  {name}.
+                </MaskLine>
+              </h1>
+              <Reveal ready={ready} delay={0.45} className="mt-6 max-w-md">
+                <p className="text-lg leading-relaxed text-hm-muted">
+                  Let's get you ready for the next interview. Upload a resume or pick up a session below.
+                </p>
+              </Reveal>
+            </div>
+
+            <Reveal ready={ready} delay={0.55} className={`text-xs leading-relaxed lg:mr-[12%] ${MONO}`}>
+              <div className="text-hm-muted">In your workspace</div>
+              <div>
+                + <Scramble text={resumes === null ? "--" : pad(resumes.length)} /> resumes analysed
+              </div>
+              <div className="text-hm-muted">
+                Last upload {latest ? timeAgo(latest.created_at) : "--"}
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal ready={ready} delay={0.65} className="relative mt-12 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className={`hidden text-[11px] text-hm-muted sm:block ${MONO}`}>Scroll / Overview</div>
+            <div className="grid grid-cols-2 gap-3 sm:w-[460px]">
+              <HeroCard to="/upload" label="Upload resume">
+                <ResumeArt className="aspect-[3/4] w-[36%]" />
+              </HeroCard>
+              <HeroCard to="/questions" label="My questions">
+                <QuestionsArt className="w-[78%]" />
+              </HeroCard>
+            </div>
           </Reveal>
         </section>
 
-        {/* ---------------- TICKER ---------------- */}
-        <Reveal ready={ready} delay={1} y={16} className="mb-14 border-y border-white/5 py-5">
-          <Marquee>
-            {TOPICS.map((topic) => (
-              <span key={topic} className="flex items-center text-lg font-light text-zinc-500">
-                <span className="px-6">{topic}</span>
-                <Sparkles className="h-3.5 w-3.5 text-violet-400/60" />
-              </span>
-            ))}
-          </Marquee>
-        </Reveal>
+        {/* ---------------- OVERVIEW ---------------- */}
+        <section className="px-5 pb-24 pt-20 sm:px-8 sm:pb-32 sm:pt-28">
+          <Statement
+            text={overview(resumes, failed, latest)}
+            tag={<SectionTag index="S.01" label="Overview" className="mr-5 -translate-y-[0.1em] sm:mr-8" />}
+          />
 
-        {/* ---------------- BENTO GRID ---------------- */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-          {/* Upload */}
-          <Reveal ready={ready} className="lg:col-span-7 lg:row-span-2">
-            <SpotlightCard
-              onClick={() => navigate("/upload")}
-              label="Upload a resume"
-              className="h-full min-h-[26rem]"
+          <div className="mt-20 grid gap-10 lg:mt-28 lg:grid-cols-2 lg:gap-4">
+            <Link
+              to="/upload"
+              className="group relative block aspect-[4/3] overflow-hidden rounded-md bg-hm-block outline-none focus-visible:ring-2 focus-visible:ring-hm-accent lg:aspect-auto lg:min-h-[620px]"
             >
-              <div className="flex h-full flex-col justify-between gap-8 p-8 sm:p-10">
-                <div>
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-violet-500/15 px-3 py-1 text-xs font-medium text-violet-200">
-                    <Upload className="h-3.5 w-3.5" /> Start here
-                  </div>
-                  <h2 className="max-w-sm text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-                    Drop in a resume.
-                    <br />
-                    <span className="text-zinc-500">Get your questions.</span>
-                  </h2>
-                </div>
-
-                <ResumeIllustration />
-
-                <div className="flex items-center justify-between text-sm text-zinc-400">
-                  <span>PDF only, results in seconds</span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black transition-transform duration-300 group-hover:rotate-45">
-                    <ArrowUpRight className="h-5 w-5" />
-                  </span>
-                </div>
+              <span className={`absolute left-5 top-5 text-[11px] text-hm-on-block/60 ${MONO}`}>Upload / PDF only</span>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <ResumeArt className="aspect-[3/4] w-[32%] max-w-[220px] transition-transform duration-700 group-hover:scale-105" />
               </div>
-            </SpotlightCard>
-          </Reveal>
+              <span
+                className={`absolute inset-x-3 bottom-3 flex items-center justify-between rounded-[3px] bg-white px-2 py-1.5 text-[11px] text-[#151515] transition-colors group-hover:bg-hm-accent ${MONO}`}
+              >
+                Upload a new resume
+                <Play size={9} fill="currentColor" strokeWidth={0} />
+              </span>
+            </Link>
 
-          {/* Stats */}
-          <Reveal ready={ready} delay={0.1} className="lg:col-span-5">
-            <SpotlightCard className="h-full">
-              <div className="flex h-full flex-col justify-between p-7">
-                <div className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-                  Your progress
-                </div>
-                <div className="my-4 flex items-end gap-4">
-                  <span className="bg-gradient-to-b from-white to-zinc-500 bg-clip-text text-7xl font-semibold leading-none tracking-tighter text-transparent">
-                    {resumes === null ? "–" : <CountUp value={resumes.length} />}
-                  </span>
-                  <span className="pb-2 text-zinc-400">
-                    {resumes?.length === 1 ? "resume analysed" : "resumes analysed"}
-                  </span>
-                </div>
-                <p className="text-sm text-zinc-500">
-                  {resumes === null
-                    ? "Loading your activity..."
-                    : recent.length > 0
-                      ? `Last upload ${timeAgo(recent[0].created_at)}`
-                      : "Upload your first resume to get started"}
-                </p>
-              </div>
-            </SpotlightCard>
-          </Reveal>
-
-          {/* Recent */}
-          <Reveal ready={ready} delay={0.2} className="lg:col-span-5">
-            <SpotlightCard className="h-full">
-              <div className="p-7">
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-                    Recent sessions
-                  </span>
-                  <Link to="/questions" className="text-xs text-zinc-400 transition hover:text-white">
-                    View all
-                  </Link>
-                </div>
-
-                {resumes === null && (
-                  <div className="space-y-3" aria-label="Loading recent sessions">
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} className="h-12 animate-pulse rounded-xl bg-white/5" />
-                    ))}
-                  </div>
-                )}
-
-                {resumes !== null && failed && (
-                  <p className="py-6 text-center text-sm text-zinc-500">
-                    Couldn't load your sessions. Is the backend running?
-                  </p>
-                )}
-
-                {resumes !== null && !failed && recent.length === 0 && (
-                  <p className="py-6 text-center text-sm text-zinc-500">
-                    Nothing here yet. Your uploads will show up here.
-                  </p>
-                )}
-
-                <ul className="space-y-1.5">
-                  {recent.map((r, i) => (
-                    <motion.li
-                      key={r.id}
-                      initial={reduce ? false : { opacity: 0, x: -14 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.15 + i * 0.08, duration: 0.5 }}
-                    >
-                      <button
-                        onClick={() => navigate(`/questions/${r.id}`)}
-                        className="group/row flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-white/[0.06]"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5 text-violet-300">
-                          <FileText className="h-4 w-4" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-zinc-100">{r.filename}</span>
-                          <span className="block text-xs text-zinc-500">{timeAgo(r.created_at)}</span>
-                        </span>
-                        <ArrowRight className="h-4 w-4 -translate-x-2 text-zinc-500 opacity-0 transition-all group-hover/row:translate-x-0 group-hover/row:opacity-100" />
-                      </button>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </SpotlightCard>
-          </Reveal>
-
-          {/* How it works */}
-          <Reveal ready={ready} className="lg:col-span-7">
-            <SpotlightCard className="h-full">
-              <div className="p-8">
-                <div className="mb-6 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-                  How it works
-                </div>
-                <ol className="relative space-y-6">
-                  <span className="absolute bottom-5 left-[19px] top-5 w-px bg-gradient-to-b from-violet-500/60 via-fuchsia-500/30 to-transparent" />
-                  {STEPS.map(({ icon: Icon, title, text }, i) => (
-                    <motion.li
-                      key={title}
-                      initial={reduce ? false : { opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true, margin: "-40px" }}
-                      transition={{ delay: i * 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                      className="relative flex items-start gap-5"
-                    >
-                      <span className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-zinc-900 text-violet-300">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <div className="pt-1">
-                        <h3 className="font-medium text-zinc-100">
-                          <span className="mr-2 font-mono text-xs text-zinc-600">0{i + 1}</span>
-                          {title}
-                        </h3>
-                        <p className="mt-1 text-sm text-zinc-500">{text}</p>
+            <div className="flex flex-col justify-between gap-14">
+              <div className="grid grid-cols-2 gap-x-4">
+                {stats.map(({ icon: Icon, value, label }) => (
+                  <div key={label} className="flex gap-3 border-t border-hm-line py-6 sm:gap-4">
+                    <Icon className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" strokeWidth={1.1} />
+                    <div className="min-w-0">
+                      <div className="text-4xl font-medium leading-none tracking-[-0.04em] sm:text-5xl">
+                        <Scramble text={value} />
                       </div>
-                    </motion.li>
-                  ))}
-                </ol>
+                      <div className={`mt-2 text-[11px] text-hm-muted ${MONO}`}>{label}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </SpotlightCard>
-          </Reveal>
 
-          {/* Tip */}
-          <Reveal ready={ready} delay={0.1} className="lg:col-span-5">
-            <SpotlightCard className="h-full">
-              <TipCard />
-            </SpotlightCard>
-          </Reveal>
-        </div>
+              <div className="max-w-sm lg:ml-auto lg:mr-[8%]">
+                <p className="text-lg font-medium leading-snug tracking-[-0.02em]">
+                  HireMind reads every page of your resume and writes technical, machine learning and behavioral
+                  questions about your own work.
+                </p>
+                <ArrowLink to="/upload" className="mt-8">
+                  Upload resume
+                </ArrowLink>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        <Reveal ready={ready} y={12} className="mt-16 text-center text-xs text-zinc-600">
-          Built with care to help you land the role. Powered by Gemini.
-        </Reveal>
-      </div>
+        {/* ---------------- SESSIONS ---------------- */}
+        <section className="bg-hm-panel px-5 py-24 sm:px-8 sm:py-32">
+          <div className="mb-14 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="max-w-3xl text-[8vw] font-medium leading-[1.04] tracking-[-0.04em] sm:text-5xl lg:text-[56px]">
+              <SectionTag index="S.02" label="Sessions" className="mr-5 -translate-y-[0.1em] sm:mr-8" />
+              Pick up where you left off.
+            </h2>
+            <ArrowLink to="/questions" className="self-start lg:self-auto">
+              All questions
+            </ArrowLink>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {resumes === null &&
+              [0, 1, 2].map((i) => <div key={i} className="min-h-[260px] animate-pulse rounded-md bg-hm-card" />)}
+
+            {resumes !== null && failed && (
+              <div className="rounded-md bg-hm-card p-7 sm:col-span-2 lg:col-span-3">
+                <p className="text-2xl font-medium tracking-[-0.03em]">Couldn't load your sessions.</p>
+                <p className="mt-2 text-hm-muted">Is the backend running? Refresh once it is.</p>
+              </div>
+            )}
+
+            {resumes !== null && !failed && recent.length === 0 && (
+              <div className="flex min-h-[260px] flex-col justify-between gap-8 rounded-md bg-hm-card p-7 sm:col-span-2 lg:col-span-3">
+                <FileText className="h-9 w-9" strokeWidth={1.1} />
+                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-2xl font-medium tracking-[-0.03em]">No sessions yet.</p>
+                    <p className="mt-2 text-hm-muted">Your uploads and their questions will show up here.</p>
+                  </div>
+                  <ArrowLink to="/upload">Upload resume</ArrowLink>
+                </div>
+              </div>
+            )}
+
+            {recent.map((r, i) => (
+              <motion.div
+                key={r.id}
+                initial={reduce ? false : { opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.6, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Link
+                  to={`/questions/${r.id}`}
+                  className="group flex min-h-[260px] flex-col justify-between rounded-md bg-hm-card p-7 outline-none transition-colors duration-300 hover:bg-hm-block hover:text-hm-on-block focus-visible:ring-2 focus-visible:ring-hm-accent"
+                >
+                  <div className="flex items-start justify-between">
+                    <FileText className="h-9 w-9" strokeWidth={1.1} />
+                    <span className={`text-[11px] text-hm-muted group-hover:text-hm-on-block/60 ${MONO}`}>#{pad(r.id)}</span>
+                  </div>
+                  <div>
+                    <h3 className="line-clamp-2 break-words text-2xl font-medium leading-tight tracking-[-0.03em]">
+                      {r.filename}
+                    </h3>
+                    <div className={`mt-4 flex items-center justify-between text-[11px] text-hm-muted group-hover:text-hm-on-block/60 ${MONO}`}>
+                      <span>{timeAgo(r.created_at)}</span>
+                      <span className="flex h-7 w-7 items-center justify-center rounded-[4px] bg-hm-accent text-[#151515] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <Play size={9} fill="currentColor" strokeWidth={0} />
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------------- TRACKS ---------------- */}
+        <section className="px-5 py-24 sm:px-8 sm:py-32">
+          <SectionTag index="S.03" label="Tracks" />
+          <div className="mt-12">
+            <TrackDial />
+          </div>
+        </section>
+
+        {/* ---------------- HOW IT WORKS ---------------- */}
+        <section className="bg-hm-panel px-5 py-24 sm:px-8 sm:py-32">
+          <h2 className="mb-14 max-w-3xl text-[8vw] font-medium leading-[1.04] tracking-[-0.04em] sm:text-5xl lg:text-[56px]">
+            <SectionTag index="S.04" label="How it works" className="mr-5 -translate-y-[0.1em] sm:mr-8" />
+            Three steps from PDF to practice.
+          </h2>
+          <ol className="grid gap-x-4 gap-y-10 md:grid-cols-3">
+            {STEPS.map(({ icon: Icon, title, text }, i) => (
+              <li key={title}>
+                <div className="flex aspect-[4/5] items-center justify-center rounded-md bg-hm-block">
+                  <OrbitArt seconds={14 + i * 4}>
+                    <Icon className="h-[34%] w-[34%]" strokeWidth={0.8} />
+                  </OrbitArt>
+                </div>
+                <div className="mt-4 flex items-baseline justify-between gap-4">
+                  <h3 className="text-xl font-medium tracking-[-0.02em]">{title}</h3>
+                  <span className={`text-[11px] text-hm-muted ${MONO}`}>Step {pad(i + 1)}</span>
+                </div>
+                <p className="mt-1 text-sm text-hm-muted">{text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---------------- CTA + FOOTER ---------------- */}
+        <section className="px-5 pb-8 pt-24 sm:px-8 sm:pt-36">
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <h2 className="text-[13vw] font-medium leading-[0.95] tracking-[-0.05em] sm:text-7xl lg:text-[104px]">
+              Ready for
+              <br />
+              the next one?
+            </h2>
+            <ArrowLink to="/upload" className="self-start lg:self-auto">
+              Upload resume
+            </ArrowLink>
+          </div>
+          <footer
+            className={`mt-20 flex flex-wrap justify-between gap-3 border-t border-hm-line pt-6 text-[11px] text-hm-muted ${MONO}`}
+          >
+            <span>HireMind © {YEAR}</span>
+            <span>Powered by Gemini 2.5 Flash</span>
+            <span>{theme} mode</span>
+          </footer>
+        </section>
+      </main>
     </div>
   );
 }

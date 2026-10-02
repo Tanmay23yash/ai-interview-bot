@@ -1,51 +1,55 @@
 from dotenv import load_dotenv
 load_dotenv()
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine
-import models
-from auth import get_current_user
-from fastapi import UploadFile, File, Depends, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from fastapi import UploadFile, File
-import pdfplumber
+import logging
 import os
-from auth import get_current_user
-from gemini import generate_questions
 
+import pdfplumber
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
-
-from database import SessionLocal, engine
+from database import engine, get_db
 import models, schemas
-from auth import hash_password, verify_password, create_access_token
+from auth import get_current_user
+from auth import hash_password, verify_password, create_access_token, has_usable_password
 from auth import create_reset_token, decode_reset_token, _password_fingerprint
+import rag
+from gemini import generate_questions
 from mailer import send_reset_email
+from observability import CORRELATION_HEADER, RequestContextMiddleware, configure_logging, install_error_handlers
+from routers import google_auth, interviews, jobs, resume_index
+from vector_store import init_vector_store
+
+configure_logging()
+logger = logging.getLogger("hiremind.api")
+
+# Pick pgvector or the real[] fallback first: it decides the embedding column type.
+init_vector_store(engine)
 
 # Create DB tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="HireMind API")
+install_error_handlers(app)
+# Added before CORS so CORS stays outermost and wraps our JSON 500s too.
+app.add_middleware(RequestContextMiddleware)
+# The local dev server, plus the deployed site (FRONTEND_URL) once there is one.
+CORS_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+if os.getenv("FRONTEND_URL"):
+    CORS_ORIGINS.append(os.getenv("FRONTEND_URL").rstrip("/"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[CORRELATION_HEADER],
 )
-
-
-
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+app.include_router(google_auth.router)
+app.include_router(resume_index.router)
+app.include_router(jobs.router)
+app.include_router(interviews.router)
 
 
 @app.get("/")
@@ -60,6 +64,11 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
             models.User.email == user.email
         ).first()
 
+        if existing and not has_usable_password(existing.hashed_password):
+            raise HTTPException(
+                status_code=400,
+                detail="This email already has an account that uses Google. Log in with Google instead.",
+            )
         if existing:
             raise HTTPException(status_code=400, detail="User already exists")
 
@@ -76,9 +85,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         db.rollback()
-        print("REGISTER ERROR:", e)
+        logger.exception("auth.register_failed")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
@@ -88,6 +97,11 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
         models.User.email == user.email
     ).first()
 
+    if db_user and not has_usable_password(db_user.hashed_password):
+        raise HTTPException(
+            status_code=401,
+            detail="This account uses Google sign-in. Log in with Google, or reset your password to add one.",
+        )
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -95,7 +109,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 @app.post("/resume/upload")
-async def upload_resume(
+def upload_resume(
     resume: UploadFile = File(...),
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user)
@@ -113,7 +127,7 @@ async def upload_resume(
     text = ""
     with pdfplumber.open(resume.file) as pdf:
         for page in pdf.pages:
-            text += page.extract_text() or ""
+            text += (page.extract_text() or "") + "\n"
 
     questions = generate_questions(text)
 
@@ -128,8 +142,17 @@ async def upload_resume(
     db.commit()
     db.refresh(resume_row)
 
+    # The upload has succeeded by now; if indexing fails, interviews re-index on start.
+    chunks = 0
+    try:
+        chunks = rag.index_resume(db, resume_row)["chunks"]
+    except Exception:
+        db.rollback()
+        logger.exception("rag.index_on_upload_failed", extra={"resume_id": resume_row.id})
+
     return {
-        "resume_id": resume_row.id
+        "resume_id": resume_row.id,
+        "chunks_indexed": chunks,
     }
 
 @app.get("/resumes")
@@ -207,8 +230,8 @@ def forgot_password(data: schemas.ForgotPasswordRequest, db: Session = Depends(g
         frontend = os.getenv("FRONTEND_URL", "http://localhost:5173")
         try:
             send_reset_email(user.email, f"{frontend}/reset-password?token={token}")
-        except Exception as e:
-            print("FORGOT PASSWORD EMAIL ERROR:", e)
+        except Exception:
+            logger.exception("auth.reset_email_failed")
 
     return {"message": "If an account exists for that email, a reset link has been sent"}
 

@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+/* Theme colours as utilities: dashboard hm-* (bg-hm-panel, text-hm-ink, ...) and landing/auth lp-* (bg-lp-surface, ...).
+   Values come from the [data-theme] tokens in index.css, so they follow light/dark mode. */
+@theme inline {
+  --color-hm-bg: var(--hm-bg);
+  --color-hm-panel: var(--hm-panel);
+  --color-hm-card: var(--hm-card);
+  --color-hm-ink: var(--hm-ink);
+  --color-hm-muted: var(--hm-muted);
+  --color-hm-faint: var(--hm-faint);
+  --color-hm-line: var(--hm-line);
+  --color-hm-block: var(--hm-block);
+  --color-hm-on-block: var(--hm-on-block);
+  --color-hm-invert: var(--hm-invert);
+  --color-hm-on-invert: var(--hm-on-invert);
+  --color-hm-accent: var(--hm-accent);
+  --color-hm-chart: var(--hm-chart);
+  --color-lp-bg: var(--lp-bg);
+  --color-lp-ink: var(--lp-ink);
+  --color-lp-surface: var(--lp-surface);
+  --color-lp-surface-soft: var(--lp-surface-soft);
+  --color-lp-surface-hover: var(--lp-surface-hover);
+  --color-lp-surface-strong: var(--lp-surface-strong);
+  --color-lp-card: var(--lp-card);
+  --color-lp-field-focus: var(--lp-field-focus);
+  --color-lp-button-hover: var(--lp-button-hover);
+  --color-lp-showcase: var(--lp-showcase);
+  --color-lp-band: var(--lp-band);
+  --color-lp-edge: var(--lp-edge);
+  --color-lp-error: var(--lp-error);
+  --color-lp-success: var(--lp-success);
+}
