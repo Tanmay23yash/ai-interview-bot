@@ -17,11 +17,14 @@ export default function ThemeToggle({
   theme,
   onChange,
   showLabel = true,
+  tone = "page",
 }: {
   theme: Theme;
   onChange: (theme: Theme) => void;
   /** The "Light"/"Dark" text beside the button (from sm up); off for tight navs. */
   showLabel?: boolean;
+  /** "inverse": white on the dark nav pill instead of the page's ink. */
+  tone?: "page" | "inverse";
 }) {
   const reduce = useReducedMotion();
   const next: Theme = theme === "dark" ? "light" : "dark";
@@ -66,7 +69,13 @@ export default function ThemeToggle({
           {theme === "dark" ? "Dark" : "Light"}
         </span>
       )}
-      <span className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-hm-ink/70 text-hm-ink transition-colors group-hover:border-hm-accent group-hover:bg-hm-accent group-hover:text-[#151515] group-focus-visible:ring-2 group-focus-visible:ring-hm-accent group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-hm-bg">
+      <span
+        className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border transition-colors group-focus-visible:ring-2 group-focus-visible:ring-offset-2 ${
+          tone === "inverse"
+            ? "border-white/25 text-white group-hover:border-white group-hover:bg-white group-hover:text-[#0f0f0f] group-focus-visible:ring-white group-focus-visible:ring-offset-nav-bg"
+            : "border-hm-ink/70 text-hm-ink group-hover:border-hm-accent group-hover:bg-hm-accent group-hover:text-[#151515] group-focus-visible:ring-hm-accent group-focus-visible:ring-offset-hm-bg"
+        }`}
+      >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
             key={theme}

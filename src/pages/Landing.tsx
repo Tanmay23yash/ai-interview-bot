@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import type { MotionValue } from "framer-motion";
-import { ArrowRight, FileText, Menu, X } from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useDocumentTheme } from "../hooks/useDocumentTheme";
 import type { Theme } from "../hooks/useDocumentTheme";
@@ -12,7 +12,8 @@ import { Magnetic, Marquee, Reveal } from "../components/dashboard/motionBits";
 import { ChromeTile, FloatingCharm, GlossyPill, HiredDisc, InflatedWord } from "../components/landing/Charms";
 import { EXAMPLES } from "../components/landing/examples";
 import HeroStudio from "../components/landing/HeroStudio";
-import Logo from "../components/landing/Logo";
+import Logo, { NavBrand } from "../components/landing/Logo";
+import PillNav from "../components/nav/PillNav";
 import { useParallax } from "../components/landing/useParallax";
 import QuestionTypes from "../components/landing/QuestionTypes";
 import Workflow from "../components/landing/Workflow";
@@ -47,107 +48,18 @@ const ROLES = [
 
 function Nav({ theme, onThemeChange }: { theme: Theme; onThemeChange: (theme: Theme) => void }) {
   const { token } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { scrollY } = useScroll();
-  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 12));
-
-  const solid = scrolled || open;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5">
-      <nav
-        aria-label="Main"
-        className={`mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-4 py-3 transition-all duration-300 ${
-          solid ? "bg-lp-bg/90 shadow-[0_12px_30px_-22px_rgba(15,15,15,0.45)] ring-1 ring-lp-edge backdrop-blur-xl" : ""
-        }`}
-      >
-        <Link to="/" aria-label="HireMind home">
-          <Logo />
-        </Link>
-
-        <ul className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((l) => (
-            <li key={l.href}>
-              <a href={l.href} className="rounded-full px-4 py-2 text-[15px] text-lp-ink/60 transition hover:bg-lp-surface hover:text-lp-ink">
-                {l.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-
-        <div className="flex items-center gap-2">
-          <ThemeToggle theme={theme} onChange={onThemeChange} showLabel={false} />
-
-          <div className="hidden items-center gap-2 md:flex">
-            {token ? (
-              <Link to="/dashboard" className="rounded-full bg-lp-ink px-5 py-2.5 text-[15px] font-medium text-lp-bg transition hover:bg-lp-button-hover">
-                Open dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="rounded-full px-4 py-2.5 text-[15px] text-lp-ink/70 transition hover:text-lp-ink">
-                  Log in
-                </Link>
-                <Link to="/signup" className="rounded-full bg-lp-ink px-5 py-2.5 text-[15px] font-medium text-lp-bg transition hover:bg-lp-button-hover">
-                  Try for free
-                </Link>
-              </>
-            )}
-          </div>
-
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-lp-surface md:hidden"
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? <X size={18} /> : <Menu size={18} />}
-          </button>
-        </div>
-      </nav>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mx-auto mt-2 max-w-6xl rounded-2xl bg-lp-bg/95 p-3 shadow-[0_20px_40px_-24px_rgba(15,15,15,0.5)] ring-1 ring-lp-edge backdrop-blur-xl md:hidden"
-          >
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="block rounded-xl px-4 py-3 font-['Schibsted_Grotesk'] text-2xl font-semibold tracking-tight hover:bg-lp-surface"
-              >
-                {l.label}
-              </a>
-            ))}
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {token ? (
-                <Link to="/dashboard" className="col-span-2 rounded-full bg-lp-ink py-3 text-center font-medium text-lp-bg">
-                  Open dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link to="/login" className="rounded-full bg-lp-surface py-3 text-center font-medium">
-                    Log in
-                  </Link>
-                  <Link to="/signup" className="rounded-full bg-lp-ink py-3 text-center font-medium text-lp-bg">
-                    Try for free
-                  </Link>
-                </>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
+    <PillNav
+      position="fixed"
+      brand={<NavBrand />}
+      brandTo="/"
+      brandLabel="HireMind home"
+      links={NAV_LINKS}
+      tools={<ThemeToggle theme={theme} onChange={onThemeChange} showLabel={false} tone="inverse" />}
+      secondary={token ? undefined : { label: "Log in", to: "/login" }}
+      cta={token ? { label: "Dashboard", to: "/dashboard" } : { label: "Try for free", to: "/signup" }}
+    />
   );
 }
 
@@ -490,8 +402,6 @@ export default function Landing() {
   return (
     <div
       data-theme={theme}
-      // The shared theme toggle uses --hm-accent; here it takes the landing page blue.
-      style={{ "--hm-accent": "#4DC5E5" } as CSSProperties}
       className="min-h-svh overflow-x-clip bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40"
     >
       <a
