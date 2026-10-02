@@ -6,7 +6,9 @@ from google.auth import exceptions as google_exceptions
 from sqlalchemy import func
 
 import models
-from auth import create_reset_token, has_usable_password
+from jose import jwt
+
+from auth import ALGORITHM, SECRET_KEY, create_reset_token, has_usable_password
 from database import SessionLocal
 from routers import google_auth
 
@@ -29,11 +31,13 @@ def google(monkeypatch):
 
     monkeypatch.setattr(google_auth.id_token, "verify_oauth2_token", verify)
 
-    def issue(email: str | None = None, *, verified=True) -> tuple[str, str]:
+    def issue(email: str | None = None, *, verified=True, given_name: str | None = "Gina") -> tuple[str, str]:
         email = email or f"g_{uuid4().hex}@example.com"
         emails.append(email)
         credential = f"cred-{uuid4().hex}"
         tokens[credential] = {"iss": "https://accounts.google.com", "aud": CLIENT_ID, "email": email, "email_verified": verified}
+        if given_name:
+            tokens[credential]["given_name"] = given_name
         return credential, email
 
     issue.tokens = tokens
@@ -169,3 +173,46 @@ def test_a_google_account_can_add_a_password_by_resetting_it(client, google):
     assert client.post("/auth/login", json={"email": email, "password": "NewPassword123"}).status_code == 200
     # Google keeps working too.
     assert _sign_in(client, credential).status_code == 200
+
+
+def _claims(response) -> dict:
+    return jwt.decode(response.json()["access_token"], SECRET_KEY, algorithms=[ALGORITHM])
+
+
+def test_google_first_name_is_stored_and_sent_in_the_token(client, google):
+    credential, email = google(given_name="Tanmay")
+
+    response = _sign_in(client, credential)
+
+    assert _claims(response)["name"] == "Tanmay"
+    [user] = _users(email)
+    assert user.first_name == "Tanmay"
+
+
+def test_google_fills_in_a_name_for_an_older_password_account(client, google):
+    email = f"noname_{uuid4().hex}@example.com"
+    google.emails.append(email)
+    client.post("/auth/register", json={"email": email, "password": "Password123"})
+    assert "name" not in _claims(client.post("/auth/login", json={"email": email, "password": "Password123"}))
+
+    credential, _ = google(email, given_name="Asha")
+    assert _claims(_sign_in(client, credential))["name"] == "Asha"
+
+    # The password login now carries the name too.
+    assert _claims(client.post("/auth/login", json={"email": email, "password": "Password123"}))["name"] == "Asha"
+
+
+def test_google_keeps_a_name_the_user_already_chose(client, google):
+    email = f"named_{uuid4().hex}@example.com"
+    google.emails.append(email)
+    client.post("/auth/register", json={"email": email, "password": "Password123", "first_name": "Ash"})
+
+    credential, _ = google(email, given_name="Ashwin")
+
+    assert _claims(_sign_in(client, credential))["name"] == "Ash"
+
+
+def test_google_account_without_a_given_name_has_no_name_claim(client, google):
+    credential, _ = google(given_name=None)
+
+    assert "name" not in _claims(_sign_in(client, credential))

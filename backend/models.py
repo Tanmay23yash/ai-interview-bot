@@ -13,6 +13,8 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    # Shown on the dashboard. From the signup form or Google; older accounts may have none.
+    first_name = Column(String(50), nullable=True)
 
     resumes = relationship("Resume", back_populates="user")
 

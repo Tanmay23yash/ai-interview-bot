@@ -11,13 +11,14 @@ from sqlalchemy.orm import Session
 from database import engine, get_db
 import models, schemas
 from auth import get_current_user
-from auth import hash_password, verify_password, create_access_token, has_usable_password
+from auth import hash_password, verify_password, has_usable_password, login_token
 from auth import create_reset_token, decode_reset_token, _password_fingerprint
 import rag
 from gemini import generate_questions
 from mailer import send_reset_email
 from observability import CORRELATION_HEADER, RequestContextMiddleware, configure_logging, install_error_handlers
 from routers import google_auth, interviews, jobs, resume_index
+from schema_updates import add_missing_columns
 from vector_store import init_vector_store
 
 configure_logging()
@@ -28,6 +29,7 @@ init_vector_store(engine)
 
 # Create DB tables
 models.Base.metadata.create_all(bind=engine)
+add_missing_columns(engine)
 
 app = FastAPI(title="HireMind API")
 install_error_handlers(app)
@@ -74,7 +76,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
         new_user = models.User(
             email=user.email,
-            hashed_password=hash_password(user.password)
+            hashed_password=hash_password(user.password),
+            first_name=user.first_name,
         )
 
         db.add(new_user)
@@ -105,8 +108,7 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    token = create_access_token({"sub": db_user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": login_token(db_user), "token_type": "bearer"}
 
 @app.post("/resume/upload")
 def upload_resume(
@@ -191,7 +193,9 @@ def get_resume_questions(
         raise HTTPException(status_code=404, detail="Resume not found")
 
     return {
+        "id": resume.id,
         "filename": resume.filename,
+        "created_at": resume.created_at,
         "questions": resume.questions
     }
 

@@ -9,6 +9,7 @@ import GoogleButton from "../components/auth/GoogleButton";
 export default function Signup() {
   const navigate = useNavigate();
 
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function Signup() {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ first_name: firstName, email, password }),
       });
 
       const data = await res.json();
@@ -51,6 +52,15 @@ export default function Signup() {
     >
       <GoogleButton mode="signup" />
       <form onSubmit={handleSignup} className="space-y-5">
+        <TextField
+          label="First name"
+          required
+          maxLength={50}
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          placeholder="What should we call you?"
+        />
         <TextField
           label="Email"
           type="email"

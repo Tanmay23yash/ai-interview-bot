@@ -168,3 +168,56 @@ def test_reset_password_rejects_bad_token_and_short_password(monkeypatch):
         json={"token": token, "new_password": "short"},
     )
     assert short.status_code == 422
+
+
+def test_single_resume_includes_its_id_and_date(account):
+    # The questions page shows this date; without it the header read "Invalid Date".
+    response = client.get(f"/resumes/{account.resume_id}", headers=account.headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == account.resume_id
+    assert data["filename"] == "jane.pdf"
+    assert data["created_at"]
+    assert "questions" in data
+
+
+def _token_claims(response) -> dict:
+    from jose import jwt
+    from auth import ALGORITHM, SECRET_KEY
+    return jwt.decode(response.json()["access_token"], SECRET_KEY, algorithms=[ALGORITHM])
+
+
+def test_signup_first_name_reaches_the_login_token():
+    email = f"named_{uuid4().hex}@example.com"
+    client.post("/auth/register", json={"email": email, "password": TEST_PASSWORD, "first_name": "  Priya   Rani "})
+
+    response = client.post("/auth/login", json={"email": email, "password": TEST_PASSWORD})
+
+    assert _token_claims(response)["name"] == "Priya Rani"
+
+
+def test_signup_without_a_first_name_still_works():
+    email = f"unnamed_{uuid4().hex}@example.com"
+    assert client.post("/auth/register", json={"email": email, "password": TEST_PASSWORD, "first_name": "   "}).status_code == 200
+
+    response = client.post("/auth/login", json={"email": email, "password": TEST_PASSWORD})
+
+    assert "name" not in _token_claims(response)
+
+
+def test_first_name_is_limited_to_50_characters():
+    response = client.post(
+        "/auth/register", json={"email": f"long_{uuid4().hex}@example.com", "password": TEST_PASSWORD, "first_name": "x" * 51}
+    )
+
+    assert response.status_code == 422
+
+
+def test_adding_columns_is_safe_to_repeat():
+    from database import engine
+    from schema_updates import add_missing_columns
+
+    add_missing_columns(engine)
+    add_missing_columns(engine)
+
