@@ -291,13 +291,15 @@ export default function InterviewSession() {
                 }}
                 onKeyDown={onAnswerKey}
                 maxLength={8000}
-                rows={10}
+                // Short on phones so Submit stays reachable above the keyboard; the old height from sm up.
+                rows={6}
                 placeholder="Answer as you would out loud: context, what you did and why, trade-offs, results."
-                className="mt-8 w-full resize-y rounded-md border border-hm-line bg-hm-card p-4 text-base leading-relaxed outline-none transition-colors placeholder:text-hm-muted focus:border-hm-ink disabled:opacity-60"
+                className="mt-8 w-full resize-y rounded-md border border-hm-line bg-hm-card p-4 text-base leading-relaxed outline-none sm:min-h-[294px] transition-colors placeholder:text-hm-muted focus:border-hm-ink disabled:opacity-60"
               />
               <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
                 <span className={`text-[11px] text-hm-muted ${MONO}`}>
-                  {words} words · Ctrl + Enter to submit
+                  {words} words
+                  <span className="hidden pointer-fine:inline"> · Ctrl + Enter to submit</span>
                 </span>
                 <div className="flex items-center gap-3">
                   <GhostButton onClick={() => submit(true)} disabled={grading}>
@@ -367,7 +369,7 @@ export default function InterviewSession() {
                       <span className={answered || current ? "" : "text-hm-muted"}>
                         {t.topic}
                         {(t.source === "gap" || t.source === "weakness") && (
-                          <span className={`ml-2 whitespace-nowrap text-[10px] text-hm-muted ${MONO}`}>
+                          <span className={`ml-2 whitespace-nowrap text-[11px] text-hm-muted ${MONO}`}>
                             · {t.source === "gap" ? "job gap" : "weak spot"}
                           </span>
                         )}
@@ -387,7 +389,7 @@ export default function InterviewSession() {
                     .map((t) => (
                       <li key={t.id} className="flex items-baseline justify-between gap-3 py-2 text-sm">
                         <span className="min-w-0 truncate">
-                          <span className={`mr-2 text-[10px] text-hm-muted ${MONO}`}>Q{pad(t.turn_index)}</span>
+                          <span className={`mr-2 text-[11px] text-hm-muted ${MONO}`}>Q{pad(t.turn_index)}</span>
                           {t.topic}
                         </span>
                         <span className="shrink-0 font-medium tabular-nums">{t.skipped ? "—" : t.score?.toFixed(1)}</span>

@@ -147,7 +147,7 @@ function Cursor({ x, y, visible }: { x: MotionValue<number>; y: MotionValue<numb
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
-              className="ur-mono text-[10px] uppercase tracking-[0.16em] text-[#0A0A0A]"
+              className="ur-mono text-[11px] uppercase tracking-[0.16em] text-[#0A0A0A]"
             >
               {label}
             </motion.span>
@@ -471,7 +471,7 @@ export default function InterviewQuestions() {
       `}</style>
 
       <div
-        className={`ur-root ur-sans relative flex min-h-screen flex-col overflow-x-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
+        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-x-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
           customCursor ? "cursor-none [&_*]:!cursor-none" : ""
         }`}
         onPointerMove={(e) => {
@@ -598,7 +598,7 @@ export default function InterviewQuestions() {
                                 <button
                                   type="button"
                                   onClick={() => setConfirmId(null)}
-                                  className="ur-mono rounded-full border border-white/15 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-white"
+                                  className="ur-mono rounded-full border border-white/15 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-white"
                                 >
                                   Cancel
                                 </button>
@@ -606,7 +606,7 @@ export default function InterviewQuestions() {
                                   type="button"
                                   onClick={() => handleDelete(r.id)}
                                   disabled={deletingId === r.id}
-                                  className="ur-mono rounded-full bg-[#FF6B5B] px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[#0A0A0A] disabled:opacity-60"
+                                  className="ur-mono rounded-full bg-[#FF6B5B] px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-[#0A0A0A] disabled:opacity-60"
                                 >
                                   {deletingId === r.id ? "Deleting" : "Delete"}
                                 </button>
@@ -631,12 +631,12 @@ export default function InterviewQuestions() {
                                   isActive ? "text-[#EDEDE8]" : "text-zinc-400 hover:text-[#EDEDE8]"
                                 }`}
                               >
-                                <span className={`ur-mono text-[10px] ${isActive ? "text-[#D7FF3A]" : "text-zinc-600"}`}>
+                                <span className={`ur-mono text-[11px] ${isActive ? "text-[#D7FF3A]" : "text-zinc-600"}`}>
                                   {pad(i + 1)}
                                 </span>
                                 <span className="min-w-0">
                                   <span className="block truncate text-base font-medium">{stripExt(r.filename)}</span>
-                                  <span className="ur-mono mt-1 block text-[10px] uppercase tracking-[0.16em] text-zinc-600">
+                                  <span className="ur-mono mt-1 block text-[11px] uppercase tracking-[0.16em] text-zinc-600">
                                     {fmtDate(r.created_at)}
                                   </span>
                                 </span>
@@ -645,7 +645,7 @@ export default function InterviewQuestions() {
                                 type="button"
                                 aria-label={`Delete ${r.filename}`}
                                 onClick={() => setConfirmId(r.id)}
-                                className="mr-4 grid h-9 w-9 shrink-0 place-items-center rounded-full text-zinc-600 transition-all hover:bg-[#FF6B5B]/10 hover:text-[#FF6B5B] focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                className="mr-4 grid h-10 w-10 shrink-0 place-items-center rounded-full text-zinc-600 transition-all hover:bg-[#FF6B5B]/10 hover:text-[#FF6B5B] focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
                               >
                                 <Trash2 size={15} />
                               </button>
@@ -657,7 +657,7 @@ export default function InterviewQuestions() {
                   })}
                 </motion.ul>
 
-                <div className="ur-mono border-t border-white/[0.06] px-6 py-4 text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                <div className="ur-mono border-t border-white/[0.06] px-6 py-4 text-[11px] uppercase tracking-[0.18em] text-zinc-600">
                   Drag left or press Esc to close
                 </div>
               </motion.aside>
@@ -673,7 +673,7 @@ export default function InterviewQuestions() {
               onClick={() => navigate("/dashboard")}
               className="ur-mono group flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:text-white"
             >
-              <span className="grid h-9 w-9 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
+              <span className="grid h-10 w-10 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
                 <ArrowLeft size={14} />
               </span>
               <span className="hidden sm:block">
@@ -692,7 +692,7 @@ export default function InterviewQuestions() {
                 className="ur-mono group flex items-center gap-3 rounded-full border border-white/15 py-1.5 pl-4 pr-1.5 text-[11px] uppercase tracking-[0.18em] text-zinc-300 transition-colors hover:border-[#D7FF3A]"
               >
                 <RollText>History</RollText>
-                <span className="grid h-7 min-w-[1.75rem] place-items-center rounded-full bg-[#D7FF3A] px-2 text-[10px] tabular-nums text-[#0A0A0A]">
+                <span className="grid h-7 min-w-[1.75rem] place-items-center rounded-full bg-[#D7FF3A] px-2 text-[11px] tabular-nums text-[#0A0A0A]">
                   {pad(resumes.length)}
                 </span>
               </button>
@@ -776,7 +776,7 @@ export default function InterviewQuestions() {
 
                     {error && (
                       <div role="alert" className="ur-mono mt-6 flex items-start gap-3 text-xs text-[#FF6B5B]">
-                        <span className="shrink-0 rounded border border-[#FF6B5B]/40 px-1.5 py-0.5 text-[10px] tracking-[0.15em]">
+                        <span className="shrink-0 rounded border border-[#FF6B5B]/40 px-1.5 py-0.5 text-[11px] tracking-[0.15em]">
                           ERR
                         </span>
                         <span className="pt-0.5 leading-relaxed">{error}</span>
@@ -942,7 +942,7 @@ export default function InterviewQuestions() {
                                     on ? "text-[#EDEDE8]" : "text-zinc-500 hover:text-zinc-200"
                                   }`}
                                 >
-                                  <span className={`ur-mono text-[10px] ${on ? "text-[#D7FF3A]" : "text-zinc-700"}`}>{pad(i + 1)}</span>
+                                  <span className={`ur-mono text-[11px] ${on ? "text-[#D7FF3A]" : "text-zinc-700"}`}>{pad(i + 1)}</span>
                                   <span
                                     className={`h-px shrink-0 self-center bg-current transition-all duration-500 ${
                                       on ? "w-6" : "w-0 group-hover:w-3"

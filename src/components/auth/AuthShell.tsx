@@ -113,9 +113,9 @@ export default function AuthShell({
       data-theme={theme}
       // The shared theme toggle uses --hm-accent; here it takes the landing page blue.
       style={{ "--hm-accent": "#4DC5E5" } as CSSProperties}
-      className="min-h-screen bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"
+      className="min-h-svh bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"
     >
-      <div className="flex min-h-screen flex-col px-5 py-5 sm:px-10 sm:py-7">
+      <div className="flex min-h-svh flex-col px-5 py-5 sm:px-10 sm:py-7">
         <header className="flex items-center justify-between gap-4">
           <Link to="/" aria-label="HireMind home">
             <Logo />
@@ -127,7 +127,7 @@ export default function AuthShell({
                 <span className="hidden sm:inline">{prompt.text}</span>
                 <Link
                   to={prompt.to}
-                  className="rounded-full bg-lp-surface px-4 py-2 font-medium text-lp-ink transition hover:bg-lp-surface-strong"
+                  className="rounded-full bg-lp-surface px-4 py-2.5 font-medium text-lp-ink transition hover:bg-lp-surface-strong"
                 >
                   {prompt.label}
                 </Link>
@@ -153,7 +153,7 @@ export default function AuthShell({
 
         <footer className="flex justify-between gap-4 font-['Geist_Mono'] text-xs text-lp-ink/40">
           <span>© {YEAR} HireMind</span>
-          <Link to="/" className="transition hover:text-lp-ink">
+          <Link to="/" className="-my-3 py-3 transition hover:text-lp-ink">
             Back to home
           </Link>
         </footer>

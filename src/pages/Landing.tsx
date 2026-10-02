@@ -437,19 +437,19 @@ function Footer() {
         {columns.map((col) => (
           <div key={col.title}>
             <h3 className="mb-4 font-['Geist_Mono'] text-xs uppercase tracking-[0.18em] text-lp-ink/40">{col.title}</h3>
-            <ul className="space-y-2.5 text-[15px]">
+            <ul className="text-[15px] sm:space-y-2.5">
               {col.links.map((l) => (
                 <li key={l.label}>
                   {l.to ? (
-                    <Link to={l.to} className="text-lp-ink/70 transition hover:text-lp-ink">
+                    <Link to={l.to} className="inline-block py-2.5 text-lp-ink/70 transition hover:text-lp-ink sm:py-0">
                       {l.label}
                     </Link>
                   ) : l.href ? (
-                    <a href={l.href} className="text-lp-ink/70 transition hover:text-lp-ink">
+                    <a href={l.href} className="inline-block py-2.5 text-lp-ink/70 transition hover:text-lp-ink sm:py-0">
                       {l.label}
                     </a>
                   ) : (
-                    <span className="text-lp-ink/70">{l.label}</span>
+                    <span className="inline-block py-2.5 text-lp-ink/70 sm:py-0">{l.label}</span>
                   )}
                 </li>
               ))}
@@ -492,7 +492,7 @@ export default function Landing() {
       data-theme={theme}
       // The shared theme toggle uses --hm-accent; here it takes the landing page blue.
       style={{ "--hm-accent": "#4DC5E5" } as CSSProperties}
-      className="min-h-screen overflow-x-clip bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40"
+      className="min-h-svh overflow-x-clip bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40"
     >
       <a
         href="#main"

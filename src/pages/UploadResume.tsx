@@ -114,7 +114,7 @@ function Cursor({ x, y, visible }: { x: MotionValue<number>; y: MotionValue<numb
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.6 }}
-              className="ur-mono text-[10px] uppercase tracking-[0.16em] text-[#0A0A0A]"
+              className="ur-mono text-[11px] uppercase tracking-[0.16em] text-[#0A0A0A]"
             >
               {label}
             </motion.span>
@@ -314,7 +314,7 @@ export default function UploadResume() {
       `}</style>
 
       <div
-        className={`ur-root ur-sans relative flex min-h-screen flex-col overflow-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
+        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
           customCursor ? "cursor-none [&_*]:!cursor-none" : ""
         }`}
         onPointerMove={(e) => {
@@ -360,7 +360,7 @@ export default function UploadResume() {
             onClick={() => navigate("/dashboard")}
             className="ur-mono group flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:text-white"
           >
-            <span className="grid h-9 w-9 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
+            <span className="grid h-10 w-10 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
               <ArrowLeft size={14} />
             </span>
             <RollText>Dashboard</RollText>
@@ -544,12 +544,26 @@ export default function UploadResume() {
                               transition={{ duration: 0.45, ease: EASE }}
                               className={`ur-serif text-7xl italic leading-[1.05] ${isDragging ? "text-[#D7FF3A]" : "text-[#EDEDE8]"}`}
                             >
-                              {isDragging ? "Release" : "Drop"}
+                              {isDragging ? (
+                                "Release"
+                              ) : (
+                                <>
+                                  <span className="pointer-coarse:hidden">Drop</span>
+                                  <span className="hidden pointer-coarse:inline">Tap</span>
+                                </>
+                              )}
                             </motion.div>
                           </AnimatePresence>
                         </div>
                         <div className="ur-mono mt-3 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-                          {isDragging ? "We'll take it from here" : "or click to browse"}
+                          {isDragging ? (
+                            "We'll take it from here"
+                          ) : (
+                            <>
+                              <span className="pointer-coarse:hidden">or click to browse</span>
+                              <span className="hidden pointer-coarse:inline">to choose a PDF</span>
+                            </>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -635,7 +649,7 @@ export default function UploadResume() {
                     exit={{ opacity: 0, y: -8 }}
                     className="ur-mono border-y border-white/10 py-4 text-center text-[11px] uppercase tracking-[0.18em] text-zinc-500"
                   >
-                    PDF only · Up to 5 MB · Drop anywhere on the page
+                    PDF only · Up to 5 MB<span className="pointer-coarse:hidden"> · Drop anywhere on the page</span>
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -685,7 +699,7 @@ export default function UploadResume() {
                     exit={{ opacity: 0, y: -6 }}
                     className="ur-mono mt-5 flex items-start gap-3 text-xs text-[#FF6B5B]"
                   >
-                    <span className="shrink-0 rounded border border-[#FF6B5B]/40 px-1.5 py-0.5 text-[10px] tracking-[0.15em]">ERR</span>
+                    <span className="shrink-0 rounded border border-[#FF6B5B]/40 px-1.5 py-0.5 text-[11px] tracking-[0.15em]">ERR</span>
                     <span className="pt-0.5 leading-relaxed">{message}</span>
                   </motion.div>
                 )}

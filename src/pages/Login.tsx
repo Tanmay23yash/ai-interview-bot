@@ -65,7 +65,7 @@ export default function Login() {
           labelAside={
             <Link
               to="/forgot-password"
-              className="text-xs text-lp-ink/55 underline-offset-4 transition hover:text-lp-ink hover:underline"
+              className="-my-3 py-3 text-xs text-lp-ink/55 underline-offset-4 transition hover:text-lp-ink hover:underline"
             >
               Forgot password?
             </Link>

@@ -153,10 +153,10 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
       {width > 0 && (
         <svg width={width} height={height} aria-hidden="true" className="block overflow-visible">
           {/* titles */}
-          <text x={0} y={12} className={`fill-hm-muted text-[10px] ${MONO}`}>
+          <text x={0} y={12} className={`fill-hm-muted text-[11px] ${MONO}`}>
             Difficulty level
           </text>
-          <text x={0} y={scoreTop - 10} className={`fill-hm-muted text-[10px] ${MONO}`}>
+          <text x={0} y={scoreTop - 10} className={`fill-hm-muted text-[11px] ${MONO}`}>
             Score out of 10
           </text>
 
@@ -164,7 +164,7 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
           {[1, 2, 3, 4, 5].map((level) => (
             <g key={level}>
               <line x1={MARGIN.left} x2={width - MARGIN.right} y1={yDiff(level)} y2={yDiff(level)} className="stroke-hm-line" strokeWidth={1} />
-              <text x={MARGIN.left - 10} y={yDiff(level)} dy="0.32em" textAnchor="end" className="fill-hm-muted text-[10px] tabular-nums">
+              <text x={MARGIN.left - 10} y={yDiff(level)} dy="0.32em" textAnchor="end" className="fill-hm-muted text-[11px] tabular-nums">
                 {level}
               </text>
             </g>
@@ -172,7 +172,7 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
           {[0, 5, 10].map((tick) => (
             <g key={tick}>
               <line x1={MARGIN.left} x2={width - MARGIN.right} y1={yScore(tick)} y2={yScore(tick)} className="stroke-hm-line" strokeWidth={1} />
-              <text x={MARGIN.left - 10} y={yScore(tick)} dy="0.32em" textAnchor="end" className="fill-hm-muted text-[10px] tabular-nums">
+              <text x={MARGIN.left - 10} y={yScore(tick)} dy="0.32em" textAnchor="end" className="fill-hm-muted text-[11px] tabular-nums">
                 {tick}
               </text>
             </g>
@@ -209,7 +209,7 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
           )}
           {/* direct label on the extreme only */}
           {points.length > 0 && (
-            <text x={x(best)} y={yScore(points[best].score) - 6} textAnchor="middle" className="fill-hm-ink text-[10px] font-medium tabular-nums">
+            <text x={x(best)} y={yScore(points[best].score) - 6} textAnchor="middle" className="fill-hm-ink text-[11px] font-medium tabular-nums">
               {fmt(points[best].score)}
             </text>
           )}
@@ -217,7 +217,7 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
           {/* x axis */}
           {points.map((p, i) =>
             i % labelEvery === 0 || i === points.length - 1 ? (
-              <text key={`x${p.turn}`} x={x(i)} y={base + 17} textAnchor="middle" className={`fill-hm-muted text-[10px] ${MONO}`}>
+              <text key={`x${p.turn}`} x={x(i)} y={base + 17} textAnchor="middle" className={`fill-hm-muted text-[11px] ${MONO}`}>
                 Q{pad(p.turn)}
               </text>
             ) : null
@@ -254,7 +254,7 @@ export function ProgressionChart({ points }: { points: ProgressPoint[] }) {
           <div className="mt-0.5">
             {LEVEL_LABELS[current.difficulty]} <span className="text-hm-muted">· level {current.difficulty}</span>
           </div>
-          <div className={`mt-1 text-[10px] text-hm-muted ${MONO}`}>
+          <div className={`mt-1 text-[11px] text-hm-muted ${MONO}`}>
             Q{pad(current.turn)} · {current.topic}
           </div>
         </div>

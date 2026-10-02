@@ -45,7 +45,7 @@ export default function GapAnalysisPanel({ analysis }: { analysis: GapAnalysis }
         <table className="w-full min-w-[560px] text-left text-sm">
           <caption className="sr-only">Job requirements and how your resume covers them</caption>
           <thead>
-            <tr className={`border-b border-hm-line text-[10px] text-hm-muted ${MONO}`}>
+            <tr className={`border-b border-hm-line text-[11px] text-hm-muted ${MONO}`}>
               <th scope="col" className="px-5 py-3 font-normal sm:px-6">Skill</th>
               <th scope="col" className="px-3 py-3 font-normal">Need</th>
               <th scope="col" className="px-3 py-3 font-normal">Your resume</th>

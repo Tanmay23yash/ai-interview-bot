@@ -178,7 +178,7 @@ export default function InterviewReport() {
           <table className="w-full text-left text-sm sm:min-w-[620px]">
             <caption className="sr-only">Performance by topic</caption>
             <thead>
-              <tr className={`border-b border-hm-line text-[10px] text-hm-muted ${MONO}`}>
+              <tr className={`border-b border-hm-line text-[11px] text-hm-muted ${MONO}`}>
                 <th scope="col" className="py-3 pr-4 font-normal">Topic</th>
                 <th scope="col" className="hidden py-3 pr-4 font-normal sm:table-cell">Skill</th>
                 <th scope="col" className="hidden py-3 pr-4 text-right font-normal sm:table-cell">Questions</th>
@@ -304,7 +304,7 @@ export default function InterviewReport() {
           <SectionTitle index="07">
             <span id="questions">Question by question</span>
           </SectionTitle>
-          <div className={`hidden grid-cols-[48px_minmax(0,1fr)_120px_64px] gap-4 border-b border-hm-line pb-3 text-[10px] text-hm-muted sm:grid ${MONO}`}>
+          <div className={`hidden grid-cols-[48px_minmax(0,1fr)_120px_64px] gap-4 border-b border-hm-line pb-3 text-[11px] text-hm-muted sm:grid ${MONO}`}>
             <span>#</span>
             <span>Topic</span>
             <span>Difficulty</span>
@@ -359,7 +359,7 @@ export default function InterviewReport() {
               type="button"
               onClick={copyId}
               aria-label="Copy session ID"
-              className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-hm-panel hover:text-hm-ink"
+              className="-my-1.5 flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-hm-panel hover:text-hm-ink"
             >
               {copied ? <Check size={13} /> : <Copy size={13} />}
             </button>
