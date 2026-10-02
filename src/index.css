@@ -72,6 +72,21 @@
   --lp-error: #ff9bcd;
   --lp-success: #9bdc7c;
 }
+/* Floating pill nav (every page): black on light pages, a lifted grey with a
+   hairline on dark ones so it still reads as a bar. .nav-on-dark forces the dark
+   look on pages that are always dark (upload, questions). */
+:root,
+[data-theme="light"] {
+  --nav-bg: #0f0f0f;
+  --nav-ring: rgb(255 255 255 / 0);
+  --nav-shadow: rgb(15 15 15 / 0.45);
+}
+[data-theme="dark"],
+.nav-on-dark {
+  --nav-bg: #1e1e1e;
+  --nav-ring: rgb(255 255 255 / 0.1);
+  --nav-shadow: rgb(0 0 0 / 0.7);
+}
 html[data-theme] {
   background-color: var(--hm-bg);
 }

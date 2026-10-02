@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChromeTile, FloatingCharm, HiredDisc, InflatedWord } from "../landing/Charms";
 import { EXAMPLES } from "../landing/examples";
-import Logo from "../landing/Logo";
+import { NavBrand } from "../landing/Logo";
+import PillNav from "../nav/PillNav";
 import { useParallax } from "../landing/useParallax";
 import ThemeToggle from "../dashboard/ThemeToggle";
 import { useDocumentTheme } from "../../hooks/useDocumentTheme";
@@ -111,30 +112,19 @@ export default function AuthShell({
   return (
     <div
       data-theme={theme}
-      // The shared theme toggle uses --hm-accent; here it takes the landing page blue.
-      style={{ "--hm-accent": "#4DC5E5" } as CSSProperties}
       className="min-h-svh bg-lp-bg font-['Geist',sans-serif] text-lp-ink antialiased selection:bg-[#4DC5E5]/40 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"
     >
       <div className="flex min-h-svh flex-col px-5 py-5 sm:px-10 sm:py-7">
-        <header className="flex items-center justify-between gap-4">
-          <Link to="/" aria-label="HireMind home">
-            <Logo />
-          </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <ThemeToggle theme={theme} onChange={setTheme} />
-            {prompt && (
-              <p className="flex items-center gap-3 text-sm text-lp-ink/55">
-                <span className="hidden sm:inline">{prompt.text}</span>
-                <Link
-                  to={prompt.to}
-                  className="rounded-full bg-lp-surface px-4 py-2.5 font-medium text-lp-ink transition hover:bg-lp-surface-strong"
-                >
-                  {prompt.label}
-                </Link>
-              </p>
-            )}
-          </div>
-        </header>
+        <PillNav
+          position="static"
+          inset={false}
+          brand={<NavBrand />}
+          brandTo="/"
+          brandLabel="HireMind home"
+          tools={<ThemeToggle theme={theme} onChange={setTheme} showLabel={false} tone="inverse" />}
+          note={prompt?.text}
+          cta={prompt && { label: prompt.label, to: prompt.to }}
+        />
 
         <main className="flex flex-1 items-center justify-center py-14">
           <motion.div

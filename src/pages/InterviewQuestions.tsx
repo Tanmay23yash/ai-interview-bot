@@ -3,9 +3,10 @@ import type { Components } from "react-markdown";
 import { useEffect, useMemo, useRef, useState, isValidElement } from "react";
 import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import AppNav from "../components/nav/AppNav";
 import { API_URL } from "../lib/api";
 import { parseDate } from "../lib/interview";
-import { ArrowLeft, ArrowUpRight, X, Trash2, Copy, Check } from "lucide-react";
+import { ArrowUpRight, X, Trash2, Copy, Check } from "lucide-react";
 import {
   motion,
   AnimatePresence,
@@ -89,19 +90,6 @@ function RollText({ children }: { children: string }) {
       <span aria-hidden className={`absolute left-0 top-full ${t}`}>
         {children}
       </span>
-    </span>
-  );
-}
-
-function LocalTime() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="tabular-nums">
-      {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
     </span>
   );
 }
@@ -471,7 +459,7 @@ export default function InterviewQuestions() {
       `}</style>
 
       <div
-        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-x-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
+        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-x-clip bg-[#0A0A0A] text-[#EDEDE8] ${
           customCursor ? "cursor-none [&_*]:!cursor-none" : ""
         }`}
         onPointerMove={(e) => {
@@ -517,7 +505,7 @@ export default function InterviewQuestions() {
                 animate="visible"
                 exit="hidden"
                 onClick={() => setOpen(false)}
-                className="fixed inset-0 z-40 bg-black/75"
+                className="fixed inset-0 z-[55] bg-black/75"
               />
 
               <motion.aside
@@ -532,7 +520,7 @@ export default function InterviewQuestions() {
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={{ left: 0.15, right: 0 }}
                 onDragEnd={handleDragEnd}
-                className="fixed inset-y-0 left-0 z-50 flex w-[88vw] max-w-[420px] flex-col border-r border-white/10 bg-[#0E0E0E] will-change-transform"
+                className="fixed inset-y-0 left-0 z-[60] flex w-[88vw] max-w-[420px] flex-col border-r border-white/10 bg-[#0E0E0E] will-change-transform"
               >
                 <div className="flex items-start justify-between border-b border-white/[0.06] p-6">
                   <div>
@@ -666,48 +654,25 @@ export default function InterviewQuestions() {
         </AnimatePresence>
 
         {/* --- TOP BAR --- */}
-        <motion.header {...fadeUp(0.35)} className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#0A0A0A]/90">
-          <div className="flex items-center justify-between px-5 py-4 md:px-10">
+        {view === "content" && (
+          <motion.div className="fixed inset-x-0 top-0 z-[60] h-[2px] origin-left bg-[#D7FF3A]" style={{ scaleX: progress }} />
+        )}
+        <AppNav
+          surface="dark"
+          intro={fadeUp(0.35)}
+          tools={
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
-              className="ur-mono group flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:text-white"
+              onClick={() => setOpen(true)}
+              className="ur-mono group flex h-11 items-center gap-2.5 rounded-full pl-4 pr-1.5 text-[11px] uppercase tracking-[0.18em] text-white/80 ring-1 ring-white/15 transition-colors hover:ring-[#D7FF3A]"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
-                <ArrowLeft size={14} />
-              </span>
-              <span className="hidden sm:block">
-                <RollText>Dashboard</RollText>
+              <RollText>History</RollText>
+              <span className="grid h-8 min-w-8 place-items-center rounded-full bg-[#D7FF3A] px-2 text-[11px] tabular-nums text-[#0A0A0A]">
+                {pad(resumes.length)}
               </span>
             </button>
-
-            <div className="ur-mono hidden items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-500 md:flex">
-              Interview prep <span className="text-zinc-700">/</span> <span className="text-zinc-300">Questions</span>
-            </div>
-
-            <div className="flex items-center gap-5">
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="ur-mono group flex items-center gap-3 rounded-full border border-white/15 py-1.5 pl-4 pr-1.5 text-[11px] uppercase tracking-[0.18em] text-zinc-300 transition-colors hover:border-[#D7FF3A]"
-              >
-                <RollText>History</RollText>
-                <span className="grid h-7 min-w-[1.75rem] place-items-center rounded-full bg-[#D7FF3A] px-2 text-[11px] tabular-nums text-[#0A0A0A]">
-                  {pad(resumes.length)}
-                </span>
-              </button>
-              <div className="ur-mono hidden items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400 lg:flex">
-                <span className="text-zinc-600">Local</span>
-                <LocalTime />
-              </div>
-            </div>
-          </div>
-
-          {/* Reading progress */}
-          {view === "content" && (
-            <motion.div className="absolute -bottom-px left-0 right-0 h-px origin-left bg-[#D7FF3A]" style={{ scaleX: progress }} />
-          )}
-        </motion.header>
+          }
+        />
 
         {/* --- MAIN --- */}
         <main className="relative z-10 flex-1">

@@ -5,25 +5,22 @@ import { API_URL } from "../lib/api";
 import {
   AnimatePresence,
   motion,
-  useMotionValueEvent,
   useReducedMotion,
   useScroll,
   useSpring,
   useTransform,
 } from "framer-motion";
 import type { MotionValue } from "framer-motion";
-import { CalendarDays, Clock3, FileText, Files, Layers, LogOut, Play, ScanLine, Target, Upload } from "lucide-react";
+import { CalendarDays, Clock3, FileText, Files, Layers, Play, ScanLine, Target, Upload } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { useDocumentTheme } from "../hooks/useDocumentTheme";
 import Preloader from "../components/dashboard/Preloader";
-import MobileNav from "../components/dashboard/MobileNav";
-import ThemeToggle from "../components/dashboard/ThemeToggle";
 import TrackDial from "../components/dashboard/TrackDial";
 import { OrbitArt, QuestionsArt, ResumeArt, Tunnel } from "../components/dashboard/art";
 import { ArrowLink, Scramble, SectionTag } from "../components/dashboard/ui";
 import { Reveal } from "../components/dashboard/motionBits";
-import Logo from "../components/landing/Logo";
+import AppNav from "../components/nav/AppNav";
 
 /*
  * Signed-in home. Visual language after cominvi.com.mx: flat ink/sage/white
@@ -37,12 +34,6 @@ const API = API_URL;
 const INTRO_KEY = "hiremind_intro_seen";
 const YEAR = new Date().getFullYear();
 const MONO = "font-['Geist_Mono'] uppercase";
-
-const PAGES = [
-  { to: "/upload", label: "Upload" },
-  { to: "/questions", label: "My questions" },
-  { to: "/interview", label: "Mock interview" },
-];
 
 type Resume = { id: number; filename: string; created_at: string };
 
@@ -71,20 +62,19 @@ function greetingFor(hour: number): string {
 }
 
 /**
- * The email and first name the login token carries (the name comes from the
- * signup form or Google). Older accounts have no name; guessing one from the
- * email gave "Tanmaysraghuvanshi".
+ * The first name the login token carries (from the signup form or Google).
+ * Older accounts have none; guessing one from the email gave "Tanmaysraghuvanshi".
  */
-function userFromToken(token: string | null): { name: string | null; email: string } {
-  if (!token) return { name: null, email: "" };
+function nameFromToken(token: string | null): string | null {
+  if (!token) return null;
   try {
     const json = atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
     // atob yields bytes; decode them as UTF-8 so names like "José" or "प्रिया" survive.
     const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(json, (c) => c.charCodeAt(0))));
     const name = typeof payload.name === "string" ? payload.name.trim() : "";
-    return { name: name || null, email: String(payload.sub ?? "") };
+    return name || null;
   } catch {
-    return { name: null, email: "" };
+    return null;
   }
 }
 
@@ -228,12 +218,10 @@ export default function Dashboard() {
   const [resumes, setResumes] = useState<Resume[] | null>(null);
   const [failed, setFailed] = useState(false);
 
-  const { scrollY, scrollYProgress } = useScroll();
+  const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30 });
-  const [scrolled, setScrolled] = useState(false);
-  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
 
-  const { name, email } = useMemo(() => userFromToken(token ?? localStorage.getItem("token")), [token]);
+  const name = useMemo(() => nameFromToken(token ?? localStorage.getItem("token")), [token]);
   const greeting = useMemo(() => greetingFor(new Date().getHours()), []);
 
   const finishIntro = useCallback(() => {
@@ -288,11 +276,6 @@ export default function Dashboard() {
     { icon: Layers, value: "03", label: "Question tracks" },
   ];
 
-  function handleSignOut() {
-    logout();
-    navigate("/");
-  }
-
   return (
     <div
       data-theme={theme}
@@ -304,54 +287,20 @@ export default function Dashboard() {
       <motion.div className="fixed inset-x-0 top-0 z-[60] h-[2px] origin-left bg-hm-accent" style={{ scaleX: progress }} />
 
       {/* ---------------- NAV ---------------- */}
-      <motion.header
-        initial={reduce ? false : { y: -24, opacity: 0 }}
-        animate={ready ? { y: 0, opacity: 1 } : undefined}
-        transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
-          scrolled ? "border-hm-line bg-hm-bg" : "border-transparent"
-        }`}
-      >
-        <nav aria-label="Dashboard" className="flex h-[76px] items-center justify-between gap-4 px-5 sm:px-8">
-          <Link to="/dashboard" aria-label="HireMind dashboard">
-            <Logo />
-          </Link>
-
-          <div className={`hidden items-center gap-8 text-xs md:flex ${MONO}`}>
-            {PAGES.map(({ to, label }) => (
-              <Link key={to} to={to} className="transition-colors hover:text-hm-accent">
-                {label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3 sm:gap-4">
-            <ThemeToggle theme={theme} onChange={setTheme} />
-            <span
-              aria-hidden="true"
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-hm-ink font-medium text-hm-bg sm:flex"
-            >
-              {(name ?? email).charAt(0).toUpperCase()}
-            </span>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              aria-label="Sign out"
-              className={`flex h-11 items-center gap-2 rounded-full border border-hm-line px-4 text-xs transition-colors hover:border-hm-ink ${MONO}`}
-            >
-              <LogOut size={14} strokeWidth={1.5} />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
-        </nav>
-      </motion.header>
+      <AppNav
+        theme={theme}
+        onThemeChange={setTheme}
+        position="fixed"
+        intro={{
+          initial: reduce ? false : { y: -24, opacity: 0 },
+          animate: ready ? { y: 0, opacity: 1 } : undefined,
+          transition: { duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] },
+        }}
+      />
 
       <main>
-        {/* Phones: the header's page links, just below the fixed header. */}
-        <MobileNav links={PAGES} className="pt-[76px]" />
-
         {/* ---------------- HERO ---------------- */}
-        <section className="relative flex flex-col overflow-hidden px-5 pb-6 pt-10 sm:px-8 sm:pb-8 md:min-h-[100svh] md:pt-28">
+        <section className="relative flex flex-col overflow-hidden px-5 pb-6 pt-28 sm:px-8 sm:pb-8 md:min-h-[100svh]">
           <Tunnel />
 
           <div className="relative flex flex-1 flex-col justify-center gap-12 lg:flex-row lg:items-center lg:justify-between">

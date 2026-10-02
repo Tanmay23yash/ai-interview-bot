@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import AppNav from "../components/nav/AppNav";
 import { API_URL } from "../lib/api";
-import { ArrowLeft, ArrowUpRight, FileText, X } from "lucide-react";
+import { ArrowUpRight, FileText, X } from "lucide-react";
 import {
   motion,
   AnimatePresence,
@@ -56,19 +57,6 @@ function RollText({ children }: { children: string }) {
       <span aria-hidden className={`absolute left-0 top-full ${t}`}>
         {children}
       </span>
-    </span>
-  );
-}
-
-function LocalTime() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <span className="tabular-nums">
-      {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
     </span>
   );
 }
@@ -314,7 +302,7 @@ export default function UploadResume() {
       `}</style>
 
       <div
-        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-hidden bg-[#0A0A0A] text-[#EDEDE8] ${
+        className={`ur-root ur-sans relative flex min-h-svh flex-col overflow-clip bg-[#0A0A0A] text-[#EDEDE8] ${
           customCursor ? "cursor-none [&_*]:!cursor-none" : ""
         }`}
         onPointerMove={(e) => {
@@ -351,30 +339,7 @@ export default function UploadResume() {
         </div>
 
         {/* --- Top bar --- */}
-        <motion.header
-          {...fadeUp(0.45)}
-          className="relative z-10 flex items-center justify-between border-b border-white/[0.07] px-5 py-5 md:px-10"
-        >
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard")}
-            className="ur-mono group flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400 transition-colors hover:text-white"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-white/15 transition-all duration-300 group-hover:border-[#D7FF3A] group-hover:bg-[#D7FF3A] group-hover:text-[#0A0A0A]">
-              <ArrowLeft size={14} />
-            </span>
-            <RollText>Dashboard</RollText>
-          </button>
-
-          <div className="ur-mono hidden items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-500 md:flex">
-            Interview prep <span className="text-zinc-700">/</span> <span className="text-zinc-300">Résumé</span>
-          </div>
-
-          <div className="ur-mono flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-zinc-400">
-            <span className="hidden text-zinc-600 sm:inline">Local</span>
-            <LocalTime />
-          </div>
-        </motion.header>
+        <AppNav surface="dark" intro={fadeUp(0.45)} />
 
         {/* --- Main --- */}
         <main className="relative z-10 grid flex-1 items-center gap-14 px-5 py-12 md:px-10 lg:grid-cols-12 lg:gap-10 lg:py-16">

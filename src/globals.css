@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Theme colours as utilities: dashboard hm-* (bg-hm-panel, text-hm-ink, ...) and landing/auth lp-* (bg-lp-surface, ...).
+/* Theme colours as utilities: dashboard hm-* (bg-hm-panel, text-hm-ink, ...), landing/auth lp-* (bg-lp-surface, ...) and the nav pill's nav-*.
    Values come from the [data-theme] tokens in index.css, so they follow light/dark mode. */
 @theme inline {
   --color-hm-bg: var(--hm-bg);
@@ -30,4 +30,6 @@
   --color-lp-edge: var(--lp-edge);
   --color-lp-error: var(--lp-error);
   --color-lp-success: var(--lp-success);
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-ring: var(--nav-ring);
 }
