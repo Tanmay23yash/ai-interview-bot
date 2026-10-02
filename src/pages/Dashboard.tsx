@@ -17,6 +17,7 @@ import { CalendarDays, Clock3, FileText, Files, Layers, LogOut, Play, ScanLine, 
 import { useAuth } from "../context/AuthContext";
 import { useDocumentTheme } from "../hooks/useDocumentTheme";
 import Preloader from "../components/dashboard/Preloader";
+import MobileNav from "../components/dashboard/MobileNav";
 import ThemeToggle from "../components/dashboard/ThemeToggle";
 import TrackDial from "../components/dashboard/TrackDial";
 import { OrbitArt, QuestionsArt, ResumeArt, Tunnel } from "../components/dashboard/art";
@@ -36,6 +37,12 @@ const API = API_URL;
 const INTRO_KEY = "hiremind_intro_seen";
 const YEAR = new Date().getFullYear();
 const MONO = "font-['Geist_Mono'] uppercase";
+
+const PAGES = [
+  { to: "/upload", label: "Upload" },
+  { to: "/questions", label: "My questions" },
+  { to: "/interview", label: "Mock interview" },
+];
 
 type Resume = { id: number; filename: string; created_at: string };
 
@@ -289,7 +296,7 @@ export default function Dashboard() {
   return (
     <div
       data-theme={theme}
-      className="min-h-screen bg-hm-bg font-['Geist',sans-serif] text-hm-ink antialiased selection:bg-hm-accent/30"
+      className="min-h-svh bg-hm-bg font-['Geist',sans-serif] text-hm-ink antialiased selection:bg-hm-accent/30"
     >
       <AnimatePresence>{showIntro && <Preloader onDone={finishIntro} />}</AnimatePresence>
 
@@ -311,15 +318,11 @@ export default function Dashboard() {
           </Link>
 
           <div className={`hidden items-center gap-8 text-xs md:flex ${MONO}`}>
-            <Link to="/upload" className="transition-colors hover:text-hm-accent">
-              Upload
-            </Link>
-            <Link to="/questions" className="transition-colors hover:text-hm-accent">
-              My questions
-            </Link>
-            <Link to="/interview" className="transition-colors hover:text-hm-accent">
-              Mock interview
-            </Link>
+            {PAGES.map(({ to, label }) => (
+              <Link key={to} to={to} className="transition-colors hover:text-hm-accent">
+                {label}
+              </Link>
+            ))}
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4">
@@ -344,8 +347,11 @@ export default function Dashboard() {
       </motion.header>
 
       <main>
+        {/* Phones: the header's page links, just below the fixed header. */}
+        <MobileNav links={PAGES} className="pt-[76px]" />
+
         {/* ---------------- HERO ---------------- */}
-        <section className="relative flex min-h-[100svh] flex-col overflow-hidden px-5 pb-6 pt-28 sm:px-8 sm:pb-8">
+        <section className="relative flex flex-col overflow-hidden px-5 pb-6 pt-10 sm:px-8 sm:pb-8 md:min-h-[100svh] md:pt-28">
           <Tunnel />
 
           <div className="relative flex flex-1 flex-col justify-center gap-12 lg:flex-row lg:items-center lg:justify-between">

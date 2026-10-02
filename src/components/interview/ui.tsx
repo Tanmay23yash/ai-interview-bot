@@ -108,7 +108,7 @@ export function Segmented<T extends string | number>({
 export function Chip({ children, accent = false }: { children: ReactNode; accent?: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-[3px] px-1.5 py-[3px] text-[10px] leading-none ${MONO} ${
+      className={`inline-flex items-center gap-1.5 rounded-[3px] px-1.5 py-[3px] text-[11px] leading-none ${MONO} ${
         accent ? "bg-hm-accent text-[#151515]" : "border border-hm-line text-hm-muted"
       }`}
     >
@@ -146,7 +146,7 @@ export function ErrorNote({ error, onRetry }: { error: unknown; onRetry?: () => 
     <div role="alert" className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-hm-accent/50 bg-hm-accent/10 p-4">
       <div className="min-w-0">
         <p className="text-sm font-medium">{message}</p>
-        {ref && <p className={`mt-1 break-all text-[10px] text-hm-muted ${MONO}`}>Ref {ref}</p>}
+        {ref && <p className={`mt-1 break-all text-[11px] text-hm-muted ${MONO}`}>Ref {ref}</p>}
       </div>
       {onRetry && (
         <GhostButton onClick={onRetry}>

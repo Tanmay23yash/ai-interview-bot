@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
 import { useDocumentTheme } from "../../hooks/useDocumentTheme";
+import MobileNav from "../dashboard/MobileNav";
 import ThemeToggle from "../dashboard/ThemeToggle";
 import Logo from "../landing/Logo";
 import { MONO } from "./ui";
@@ -23,7 +24,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   return (
     <div
       data-theme={theme}
-      className="min-h-screen bg-hm-bg font-['Geist',sans-serif] text-hm-ink antialiased selection:bg-hm-accent/30"
+      className="min-h-svh bg-hm-bg font-['Geist',sans-serif] text-hm-ink antialiased selection:bg-hm-accent/30"
     >
       <header className="sticky top-0 z-40 border-b border-hm-line bg-hm-bg">
         <nav aria-label="Main" className="flex h-[68px] items-center justify-between gap-4 px-4 sm:px-8">
@@ -62,6 +63,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </div>
         </nav>
       </header>
+      <MobileNav links={NAV} />
 
       <main className="mx-auto max-w-[1280px] px-4 pb-24 pt-10 sm:px-8 sm:pt-14">{children}</main>
     </div>

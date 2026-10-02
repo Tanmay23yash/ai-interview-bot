@@ -69,7 +69,7 @@ export default function ForgotPassword() {
 
         <Link
           to="/login"
-          className="flex items-center justify-center gap-2 pt-2 text-sm text-lp-ink/55 transition hover:text-lp-ink"
+          className="flex items-center justify-center gap-2 py-3 text-sm text-lp-ink/55 transition hover:text-lp-ink"
         >
           <ArrowLeft size={16} /> Back to log in
         </Link>

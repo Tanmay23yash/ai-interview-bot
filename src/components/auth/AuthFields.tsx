@@ -28,10 +28,10 @@ export function TextField({ label, labelAside, trailing, id, className = "", ...
       <div className="relative">
         <input
           id={inputId}
-          className={`w-full rounded-2xl bg-lp-surface px-4 py-3.5 text-[15px] text-lp-ink outline-none ring-1 ring-transparent transition placeholder:text-lp-ink/30 hover:bg-lp-surface-hover focus:bg-lp-field-focus focus:ring-lp-ink ${trailing ? "pr-12" : ""} ${className}`}
+          className={`w-full rounded-2xl bg-lp-surface px-4 py-3.5 text-base text-lp-ink sm:text-[15px] outline-none ring-1 ring-transparent transition placeholder:text-lp-ink/30 hover:bg-lp-surface-hover focus:bg-lp-field-focus focus:ring-lp-ink ${trailing ? "pr-12" : ""} ${className}`}
           {...props}
         />
-        {trailing && <div className="absolute right-2 top-1/2 -translate-y-1/2">{trailing}</div>}
+        {trailing && <div className="absolute right-1.5 top-1/2 -translate-y-1/2">{trailing}</div>}
       </div>
     </div>
   );
@@ -49,7 +49,7 @@ export function PasswordField(props: Omit<FieldProps, "type" | "trailing">) {
           type="button"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-lp-ink/45 transition hover:bg-lp-ink/5 hover:text-lp-ink"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-lp-ink/45 transition hover:bg-lp-ink/5 hover:text-lp-ink"
         >
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>

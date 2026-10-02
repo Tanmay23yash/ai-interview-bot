@@ -12,7 +12,7 @@ const MONO = "font-['Geist_Mono'] uppercase";
 export function SectionTag({ index, label, className = "" }: { index: string; label: string; className?: string }) {
   return (
     // font-normal/tracking-normal: tags sit inside big headings and must not inherit their weight or tight tracking.
-    <span className={`inline-flex flex-col items-start gap-1 align-top text-[10px] font-normal leading-none tracking-normal ${MONO} ${className}`}>
+    <span className={`inline-flex flex-col items-start gap-1 align-top text-[11px] font-normal leading-none tracking-normal ${MONO} ${className}`}>
       <span className="rounded-[3px] border border-hm-ink px-1 py-[3px] text-hm-ink">{index}</span>
       <span className="rounded-[3px] bg-hm-ink px-1 py-[3px] text-hm-bg">{label}</span>
     </span>

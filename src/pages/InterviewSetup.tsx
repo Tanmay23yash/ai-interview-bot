@@ -40,7 +40,7 @@ const JOB_MODES = [
   { value: "new" as const, label: "Add a job" },
 ];
 const INPUT =
-  "w-full rounded-md border border-hm-line bg-hm-bg px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-hm-muted focus:border-hm-ink";
+  "w-full rounded-md border border-hm-line bg-hm-bg px-3 py-2.5 text-base outline-none sm:text-sm transition-colors placeholder:text-hm-muted focus:border-hm-ink";
 
 export default function InterviewSetup() {
   const api = useApi();
@@ -459,7 +459,7 @@ export default function InterviewSetup() {
                     )}
                     <Link
                       to={done ? `/interview/session/${s.session_id}/report` : `/interview/session/${s.session_id}`}
-                      className={`text-xs underline-offset-4 hover:text-hm-accent hover:underline ${MONO}`}
+                      className={`-my-3 py-3 text-xs underline-offset-4 hover:text-hm-accent hover:underline ${MONO}`}
                     >
                       {done ? "Report" : "Continue"}
                     </Link>
@@ -470,7 +470,7 @@ export default function InterviewSetup() {
                         type="button"
                         aria-label={`Delete ${s.title}`}
                         onClick={() => setConfirmDelete(s.session_id)}
-                        className="flex h-9 w-9 items-center justify-center rounded-full text-hm-muted transition-colors hover:bg-hm-panel hover:text-hm-ink"
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-hm-muted transition-colors hover:bg-hm-panel hover:text-hm-ink"
                       >
                         <Trash2 size={15} />
                       </button>
