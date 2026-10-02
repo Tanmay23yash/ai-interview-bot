@@ -12,7 +12,7 @@ import { Magnetic, Marquee, Reveal } from "../components/dashboard/motionBits";
 import { ChromeTile, FloatingCharm, GlossyPill, HiredDisc, InflatedWord } from "../components/landing/Charms";
 import { EXAMPLES } from "../components/landing/examples";
 import HeroStudio from "../components/landing/HeroStudio";
-import Logo, { NavBrand } from "../components/landing/Logo";
+import Logo, { NavWordmark } from "../components/landing/Logo";
 import PillNav from "../components/nav/PillNav";
 import { useParallax } from "../components/landing/useParallax";
 import QuestionTypes from "../components/landing/QuestionTypes";
@@ -52,11 +52,13 @@ function Nav({ theme, onThemeChange }: { theme: Theme; onThemeChange: (theme: Th
   return (
     <PillNav
       position="fixed"
-      brand={<NavBrand />}
+      brand={<NavWordmark />}
       brandTo="/"
       brandLabel="HireMind home"
       links={NAV_LINKS}
       tools={<ThemeToggle theme={theme} onChange={onThemeChange} showLabel={false} tone="inverse" />}
+      // Below sm the bar has no room for the switch next to the wordmark and CTA.
+      toolsBelowSm="panel"
       secondary={token ? undefined : { label: "Log in", to: "/login" }}
       cta={token ? { label: "Dashboard", to: "/dashboard" } : { label: "Try for free", to: "/signup" }}
     />
