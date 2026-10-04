@@ -13,7 +13,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 # The fallback is only for local development (and keeps existing local sessions valid).
 SECRET_KEY = os.getenv("JWT_SECRET") or "SUPER_SECRET_KEY_CHANGE_THIS"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# How long a sign-in lasts. There is no refresh token, so with an hour people were
+# signed out mid-task; the app signs out by itself when this runs out.
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

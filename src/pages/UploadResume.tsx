@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNav from "../components/nav/AppNav";
+import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../lib/api";
 import { ArrowUpRight, FileText, X } from "lucide-react";
 import {
@@ -134,6 +135,7 @@ export default function UploadResume() {
   const loadingRef = useRef(false);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const reduce = useReducedMotion();
 
   // --- Pointer-driven motion ---
@@ -244,6 +246,12 @@ export default function UploadResume() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
+
+      // The session expired or was rejected: signing out sends the user to log in again.
+      if (res.status === 401) {
+        logout();
+        return;
+      }
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || "Upload failed");
