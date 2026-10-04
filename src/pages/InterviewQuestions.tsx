@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, isValidElement } from "react";
 import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppNav from "../components/nav/AppNav";
+import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../lib/api";
 import { parseDate } from "../lib/interview";
 import { ArrowUpRight, X, Trash2, Copy, Check } from "lucide-react";
@@ -247,6 +248,7 @@ const mdComponents: Components = {
 
 export default function InterviewQuestions() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { resumeId } = useParams();
   const token = localStorage.getItem("token");
   const reduce = useReducedMotion();
@@ -282,7 +284,10 @@ export default function InterviewQuestions() {
     const ctrl = new AbortController();
     setListLoading(true);
     fetch(`${API}/resumes`, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("Couldn't load your history"))))
+      .then((res) => {
+        if (res.status === 401) logout(); // session expired: back to log in
+        return res.ok ? res.json() : Promise.reject(new Error("Couldn't load your history"));
+      })
       .then((data) => setResumes(Array.isArray(data) ? data : []))
       .catch((err) => {
         if (err.name !== "AbortError") console.error(err);
@@ -291,7 +296,7 @@ export default function InterviewQuestions() {
         if (!ctrl.signal.aborted) setListLoading(false);
       });
     return () => ctrl.abort();
-  }, [token]);
+  }, [token, logout]);
 
   useEffect(() => {
     if (!resumeId) {
@@ -304,7 +309,10 @@ export default function InterviewQuestions() {
     setError("");
     window.scrollTo({ top: 0 });
     fetch(`${API}/resumes/${resumeId}`, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("We couldn't open that résumé."))))
+      .then((res) => {
+        if (res.status === 401) logout();
+        return res.ok ? res.json() : Promise.reject(new Error("We couldn't open that résumé."));
+      })
       .then((data: Resume) => setActive(data))
       .catch((err) => {
         if (err.name === "AbortError") return;
@@ -316,7 +324,7 @@ export default function InterviewQuestions() {
         if (!ctrl.signal.aborted) setActiveLoading(false);
       });
     return () => ctrl.abort();
-  }, [resumeId, token]);
+  }, [resumeId, token, logout]);
 
   /* ---------------- DRAWER BEHAVIOUR ---------------- */
 
@@ -350,6 +358,7 @@ export default function InterviewQuestions() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) logout();
       if (!res.ok) throw new Error("Delete failed");
       setResumes((prev) => prev.filter((r) => r.id !== id));
       if (active?.id === id) {

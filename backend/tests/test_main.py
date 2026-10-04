@@ -206,6 +206,17 @@ def test_signup_without_a_first_name_still_works():
     assert "name" not in _token_claims(response)
 
 
+def test_a_sign_in_lasts_a_week():
+    import time
+    email = f"week_{uuid4().hex}@example.com"
+    client.post("/auth/register", json={"email": email, "password": TEST_PASSWORD})
+
+    response = client.post("/auth/login", json={"email": email, "password": TEST_PASSWORD})
+
+    lifetime = _token_claims(response)["exp"] - time.time()
+    assert 7 * 24 * 3600 - 60 < lifetime <= 7 * 24 * 3600
+
+
 def test_first_name_is_limited_to_50_characters():
     response = client.post(
         "/auth/register", json={"email": f"long_{uuid4().hex}@example.com", "password": TEST_PASSWORD, "first_name": "x" * 51}
