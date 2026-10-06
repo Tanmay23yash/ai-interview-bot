@@ -182,6 +182,17 @@ def test_single_resume_includes_its_id_and_date(account):
     assert "questions" in data
 
 
+def test_only_the_owner_can_delete_a_resume(account_factory):
+    owner, stranger = account_factory(), account_factory()
+
+    assert client.delete(f"/resumes/{owner.resume_id}", headers=stranger.headers).status_code == 404
+    assert client.get(f"/resumes/{owner.resume_id}", headers=owner.headers).status_code == 200
+
+    assert client.delete(f"/resumes/{owner.resume_id}", headers=owner.headers).status_code == 200
+    assert client.get(f"/resumes/{owner.resume_id}", headers=owner.headers).status_code == 404
+    assert client.get("/resumes", headers=owner.headers).json() == []
+
+
 def _token_claims(response) -> dict:
     from jose import jwt
     from auth import ALGORITHM, SECRET_KEY
