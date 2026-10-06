@@ -184,6 +184,29 @@ function MagneticButton({ children, onClick, className = "" }: { children: React
   );
 }
 
+/** Cancel + confirm pair shown once the user asks to delete a résumé. */
+function DeleteActions({ busy, onCancel, onConfirm }: { busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <div className="flex shrink-0 gap-2">
+      <button
+        type="button"
+        onClick={onCancel}
+        className="ur-mono rounded-full border border-white/15 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-white"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={busy}
+        className="ur-mono rounded-full bg-[#FF6B5B] px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-[#0A0A0A] disabled:opacity-60"
+      >
+        {busy ? "Deleting" : "Delete"}
+      </button>
+    </div>
+  );
+}
+
 /* ---------------- MARKDOWN STYLING ---------------- */
 
 const mdComponents: Components = {
@@ -261,6 +284,7 @@ export default function InterviewQuestions() {
   const [error, setError] = useState("");
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState("");
   const [copied, setCopied] = useState(false);
   const [currentSection, setCurrentSection] = useState<string | null>(null);
   const [finePointer, setFinePointer] = useState(false);
@@ -329,10 +353,10 @@ export default function InterviewQuestions() {
   /* ---------------- DRAWER BEHAVIOUR ---------------- */
 
   useEffect(() => {
-    if (!open) {
-      setConfirmId(null);
-      return;
-    }
+    // The page and the drawer share one pending confirmation; opening or closing drops it.
+    setConfirmId(null);
+    setDeleteError("");
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
@@ -351,8 +375,14 @@ export default function InterviewQuestions() {
 
   /* ---------------- HANDLERS ---------------- */
 
+  function askDelete(id: number | null) {
+    setConfirmId(id);
+    setDeleteError("");
+  }
+
   async function handleDelete(id: number) {
     setDeletingId(id);
+    setDeleteError("");
     try {
       const res = await fetch(`${API}/resumes/${id}`, {
         method: "DELETE",
@@ -361,15 +391,17 @@ export default function InterviewQuestions() {
       if (res.status === 401) logout();
       if (!res.ok) throw new Error("Delete failed");
       setResumes((prev) => prev.filter((r) => r.id !== id));
+      setConfirmId(null);
       if (active?.id === id) {
         setActive(null);
         navigate("/questions");
       }
     } catch (err) {
       console.error(err);
+      // Keep the confirmation open so the user can retry.
+      setDeleteError("Couldn't delete it. Try again.");
     } finally {
       setDeletingId(null);
-      setConfirmId(null);
     }
   }
 
@@ -588,26 +620,20 @@ export default function InterviewQuestions() {
                               transition={{ duration: 0.15 }}
                               className="flex items-center justify-between gap-3 bg-[#FF6B5B]/[0.06] px-6 py-5"
                             >
-                              <span className="min-w-0 truncate text-sm text-zinc-300">
-                                Delete <span className="text-[#EDEDE8]">{stripExt(r.filename)}</span>?
+                              <span aria-live="polite" className="min-w-0 truncate text-sm text-zinc-300">
+                                {deleteError ? (
+                                  <span className="text-[#FF6B5B]">{deleteError}</span>
+                                ) : (
+                                  <>
+                                    Delete <span className="text-[#EDEDE8]">{stripExt(r.filename)}</span>?
+                                  </>
+                                )}
                               </span>
-                              <div className="flex shrink-0 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmId(null)}
-                                  className="ur-mono rounded-full border border-white/15 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-zinc-400 transition-colors hover:text-white"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(r.id)}
-                                  disabled={deletingId === r.id}
-                                  className="ur-mono rounded-full bg-[#FF6B5B] px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-[#0A0A0A] disabled:opacity-60"
-                                >
-                                  {deletingId === r.id ? "Deleting" : "Delete"}
-                                </button>
-                              </div>
+                              <DeleteActions
+                                busy={deletingId === r.id}
+                                onCancel={() => askDelete(null)}
+                                onConfirm={() => handleDelete(r.id)}
+                              />
                             </motion.div>
                           ) : (
                             <motion.div
@@ -641,7 +667,7 @@ export default function InterviewQuestions() {
                               <button
                                 type="button"
                                 aria-label={`Delete ${r.filename}`}
-                                onClick={() => setConfirmId(r.id)}
+                                onClick={() => askDelete(r.id)}
                                 className="mr-4 grid h-10 w-10 shrink-0 place-items-center rounded-full text-zinc-600 transition-all hover:bg-[#FF6B5B]/10 hover:text-[#FF6B5B] focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
                               >
                                 <Trash2 size={15} />
@@ -894,6 +920,27 @@ export default function InterviewQuestions() {
                     <ArrowUpRight size={14} />
                     <RollText>Mock interview</RollText>
                   </button>
+                  {confirmId === active.id ? (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-[#FF6B5B]/[0.08] py-1.5 pl-5 pr-1.5">
+                      <span aria-live="polite" className={`text-sm ${deleteError ? "text-[#FF6B5B]" : "text-zinc-300"}`}>
+                        {deleteError || "Delete this résumé and its questions? Past interviews are kept."}
+                      </span>
+                      <DeleteActions
+                        busy={deletingId === active.id}
+                        onCancel={() => askDelete(null)}
+                        onConfirm={() => handleDelete(active.id)}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => askDelete(active.id)}
+                      className="ur-mono group flex items-center gap-2.5 rounded-full border border-white/15 px-5 py-3 text-[11px] uppercase tracking-[0.18em] text-zinc-300 transition-colors hover:border-[#FF6B5B] hover:text-[#FF6B5B]"
+                    >
+                      <Trash2 size={14} />
+                      <RollText>Delete</RollText>
+                    </button>
+                  )}
                 </motion.div>
 
                 {/* Body */}
